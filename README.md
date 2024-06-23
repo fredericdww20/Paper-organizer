@@ -48,7 +48,7 @@ Bienvenue dans notre système de gestion de documents, développé avec Symfony.
 - **Cache et Performance**
 
 ## Prérequis
-- PHP 7.4 ou supérieur
+- PHP 8.0 ou supérieur
 - Composer
 - MySQL ou autre base de données compatible
 - Node.js et npm (pour gérer les dépendances frontend)
