@@ -1,0 +1,14 @@
+{# templates/document/upload.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block body %}
+    <h1>Upload Document</h1>
+
+    {{ form_start(form) }}
+        {{ form_row(form.title) }}
+        {{ form_row(form.file) }}
+        <button class="btn">{{ button_label|default('Upload') }}</button>
+    {{ form_end(form) }}
+
+    <a href="{{ path('folder_show', {'id': folder.id}) }}">Back to Folder</a>
+{% endblock %}
