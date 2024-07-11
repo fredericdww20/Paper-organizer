@@ -1,0 +1,120 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+{{ knp_menu_render('breadcrumb_menu', {'template': 'menu/breadcrumb.html.twig'}) }}
+
+
+
+    <h1>Documents in {{ folder.name }}</h1>
+
+    <ul id="document-list">
+        {% for document in folder.documents %}
+            <li data-id="{{ document.id }}">
+                {{ document.title }}
+                - <a href="#" class="move-link" data-id="{{ document.id }}">Move</a>
+                - <a href="{{ path('document_download', {'id': document.id}) }}" class="download-link">Download</a>
+                - <a href="#" class="preview-link" data-id="{{ document.id }}">Preview</a>
+                - <form action="{{ path('document_move', {'id': document.id}) }}" method="post" class="move-form" style="display: none;">
+                    <select name="folder">
+                        {% for f in folders %}
+                            <option value="{{ f.id }}">{{ f.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <input type="hidden" name="_token" value="{{ csrf_token('move' ~ document.id) }}">
+                    <button type="submit">Move</button>
+                </form>
+                - <form action="{{ path('document_delete', {'id': document.id}) }}" method="post" class="delete-form" style="display: inline;" data-id="{{ document.id }}" data-folder-id="{{ folder.id }}">
+                    <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ document.id) }}">
+                    <button type="submit">Delete</button>
+                </form>
+            </li>
+        {% endfor %}
+    </ul>
+
+    <h2>Upload New Document</h2>
+    {{ form_start(uploadForm, {'attr': {'id': 'upload-form', 'data-folder-id': folder.id}}) }}
+        {{ form_row(uploadForm.title) }}
+        {{ form_row(uploadForm.file) }}
+        <button type="submit">Upload</button>
+    {{ form_end(uploadForm) }}
+
+    <!-- Modal for document preview -->
+    <div id="previewModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <iframe id="previewIframe" style="width: 100%; height: 80vh;"></iframe>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.move-link').forEach(function(link) {
+                link.addEventListener('click', function(event) {
+                    event.preventDefault();
+                    var moveForm = this.parentElement.querySelector('.move-form');
+                    moveForm.style.display = moveForm.style.display === 'none' || moveForm.style.display === '' ? 'inline' : 'none';
+                });
+            });
+
+            document.querySelectorAll('.preview-link').forEach(function(link) {
+                link.addEventListener('click', function(event) {
+                    event.preventDefault();
+                    var documentId = this.dataset.id;
+                    var iframe = document.getElementById('previewIframe');
+                    iframe.src = '{{ path('document_preview', {'id': 'DOCUMENT_ID_PLACEHOLDER'}) }}'.replace('DOCUMENT_ID_PLACEHOLDER', documentId);
+                    var modal = document.getElementById('previewModal');
+                    modal.style.display = 'block';
+                });
+            });
+
+            var modal = document.getElementById('previewModal');
+            var span = document.getElementsByClassName('close')[0];
+            span.onclick = function() {
+                modal.style.display = 'none';
+            }
+            window.onclick = function(event) {
+                if (event.target == modal) {
+                    modal.style.display = 'none';
+                }
+            }
+        });
+    </script>
+
+    <style>
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgb(0,0,0);
+            background-color: rgba(0,0,0,0.4);
+            padding-top: 60px;
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+    </style>
+{% endblock %}

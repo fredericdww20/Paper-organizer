@@ -1,0 +1,261 @@
+{# templates/folder/index.html.twig #}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Folder Index</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        h1 {
+            font-size: 24px;
+        }
+        #create-folder {
+            margin-bottom: 10px;
+            display: inline-block;
+            padding: 10px 15px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+        }
+        #create-folder:hover {
+            background-color: #0056b3;
+        }
+        .folder-list {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        .folder-item {
+            margin-left: 20px;
+            padding: 5px 0;
+        }
+        .folder-item > span {
+            cursor: pointer;
+            color: #007bff;
+            text-decoration: underline;
+        }
+        .folder-item button {
+            margin-left: 5px;
+            padding: 5px 10px;
+            background-color: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 4px;
+        }
+        .folder-item button:hover {
+            background-color: #5a6268;
+        }
+        .toggle-subfolders {
+            background-color: #28a745;
+        }
+        .toggle-subfolders:hover {
+            background-color: #218838;
+        }
+        .move-folder {
+            background-color: #ffc107;
+        }
+        .move-folder:hover {
+            background-color: #e0a800;
+        }
+        .delete-folder {
+            background-color: #dc3545;
+        }
+        .delete-folder:hover {
+            background-color: #c82333;
+        }
+    </style>
+</head>
+<body>
+    <h1>Folders</h1>
+    <button id="create-folder">Create new Folder</button>
+    <ul id="folder-list" class="folder-list">
+        <!-- Folders will be loaded here by AJAX -->
+    </ul>
+
+    <div id="create-folder-modal" style="display: none;">
+        <label for="new-folder-name">Folder Name:</label>
+        <input type="text" id="new-folder-name">
+        <label for="parent-folder-select">Parent Folder:</label>
+        <select id="parent-folder-select">
+            <option value="">Root</option>
+            {% for folder in folders %}
+                <option value="{{ folder.id }}">{{ folder.name }}</option>
+            {% endfor %}
+        </select>
+        <button id="create-folder-confirm">Create</button>
+        <button id="create-folder-cancel">Cancel</button>
+    </div>
+
+    <script>
+        function loadFolders() {
+            $.ajax({
+                url: '{{ path('get_folders') }}',
+                method: 'GET',
+                success: function(data) {
+                    let folderList = $('#folder-list');
+                    folderList.empty();
+                    renderFolders(data, folderList);
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    console.error('Failed to load folders:', textStatus, errorThrown, jqXHR.responseText);
+                    alert('Failed to load folders.');
+                }
+            });
+        }
+
+        function renderFolders(folders, container) {
+            folders.forEach(function(folder) {
+                let subfolderContainer = `<ul id="subfolders-${folder.id}" class="folder-list"></ul>`;
+                let folderItem = $(`
+                    <li class="folder-item" data-id="${folder.id}">
+                        <span class="folder-link" data-id="${folder.id}">${folder.name}</span>
+                        <button class="edit-folder" data-id="${folder.id}">Edit</button>
+                        <form class="delete-folder-form" data-id="${folder.id}" style="display:inline;">
+                            <input type="hidden" name="_token" value="${folder.csrf_token}">
+                            <button type="submit" class="delete-folder" data-id="${folder.id}">Delete</button>
+                        </form>
+                        <button class="move-folder" data-id="${folder.id}">Move</button>
+                        <button class="toggle-subfolders" data-id="${folder.id}">Toggle Subfolders</button>
+                        ${subfolderContainer}
+                    </li>
+                `);
+                container.append(folderItem);
+                renderFolders(folder.subfolders, $(`#subfolders-${folder.id}`));
+            });
+        }
+
+        $(document).ready(function() {
+            loadFolders();
+
+            $('#create-folder').on('click', function() {
+                $('#create-folder-modal').show();
+            });
+
+            $('#create-folder-confirm').on('click', function() {
+                let folderName = $('#new-folder-name').val();
+                let parentFolderId = $('#parent-folder-select').val();
+                $.ajax({
+                    url: '{{ path('folder_new') }}',
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ name: folderName, parent_id: parentFolderId || null }),
+                    success: function() {
+                        $('#create-folder-modal').hide();
+                        loadFolders();
+                    },
+                    error: function(jqXHR, textStatus, errorThrown) {
+                        console.error('Failed to create folder:', textStatus, errorThrown, jqXHR.responseText);
+                        alert('Failed to create folder.');
+                    }
+                });
+            });
+
+            $('#create-folder-cancel').on('click', function() {
+                $('#create-folder-modal').hide();
+            });
+
+            $('#folder-list').on('click', '.folder-link', function() {
+                let folderId = $(this).data('id');
+                window.location.href = '{{ path('folder_view', {'id': 'FOLDER_ID'}) }}'.replace('FOLDER_ID', folderId);
+            });
+
+            $('#folder-list').on('click', '.edit-folder', function() {
+                let folderId = $(this).data('id');
+                let folderName = prompt('Enter new folder name:');
+                if (folderName) {
+                    $.ajax({
+                        url: '{{ path('folder_edit', {'id': 'FOLDER_ID'}) }}'.replace('FOLDER_ID', folderId),
+                        method: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify({ name: folderName }),
+                        success: function() {
+                            loadFolders();
+                        },
+                        error: function(jqXHR, textStatus, errorThrown) {
+                            console.error('Failed to edit folder:', textStatus, errorThrown, jqXHR.responseText);
+                            alert('Failed to edit folder.');
+                        }
+                    });
+                }
+            });
+
+            $('#folder-list').on('submit', '.delete-folder-form', function(e) {
+                e.preventDefault();
+                let form = $(this);
+                let folderId = form.data('id');
+                if (confirm('Are you sure you want to delete this folder?')) {
+                    $.ajax({
+                        url: '{{ path('folder_delete', {'id': 'FOLDER_ID'}) }}'.replace('FOLDER_ID', folderId),
+                        method: 'POST',
+                        data: form.serialize(),
+                        success: function() {
+                            loadFolders();
+                        },
+                        error: function(jqXHR, textStatus, errorThrown) {
+                            console.error('Failed to delete folder:', textStatus, errorThrown, jqXHR.responseText);
+                            alert('Failed to delete folder.');
+                        }
+                    });
+                }
+            });
+
+            $('#folder-list').on('click', '.move-folder', function() {
+                let folderId = $(this).data('id');
+                $.ajax({
+                    url: '{{ path('get_folders_for_move') }}',
+                    method: 'GET',
+                    success: function(data) {
+                        let folderOptions = data.map(folder => `<option value="${folder.id}">${folder.name}</option>`).join('');
+                        let moveDialogHtml = `
+                            <div id="move-dialog">
+                                <label for="target-folder">Select target folder:</label>
+                                <select id="target-folder">
+                                    <option value="">Root</option>
+                                    ${folderOptions}
+                                </select>
+                                <button id="move-confirm">Move</button>
+                                <button id="move-cancel">Cancel</button>
+                            </div>
+                        `;
+                        $('body').append(moveDialogHtml);
+
+                        $('#move-confirm').on('click', function() {
+                            let targetFolderId = $('#target-folder').val();
+                            $.ajax({
+                                url: '{{ path('folder_move', {'id': 'FOLDER_ID'}) }}'.replace('FOLDER_ID', folderId),
+                                method: 'POST',
+                                contentType: 'application/json',
+                                data: JSON.stringify({ folder: targetFolderId }),
+                                success: function() {
+                                    loadFolders();
+                                    $('#move-dialog').remove();
+                                },
+                                error: function(jqXHR, textStatus, errorThrown) {
+                                    console.error('Failed to move folder:', textStatus, errorThrown, jqXHR.responseText);
+                                    alert('Failed to move folder.');
+                                    $('#move-dialog').remove();
+                                }
+                            });
+                        });
+
+                        $('#move-cancel').on('click', function() {
+                            $('#move-dialog').remove();
+                        });
+                    },
+                    error: function(jqXHR, textStatus, errorThrown) {
+                        console.error('Failed to load target folders:', textStatus, errorThrown, jqXHR.responseText);
+                        alert('Failed to load target folders.');
+                    }
+                });
+            });
+
+            $('#folder-list').on('click', '.toggle-subfolders', function() {
+                let folderId = $(this).data('id');
+                $(`#subfolders-${folderId}`).toggle();
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+{# templates/folder/edit.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block body %}
+    <h1>Edit Folder</h1>
+
+    {{ form_start(form) }}
+        {{ form_row(form.name) }}
+        <button type="submit">Save changes</button>
+    {{ form_end(form) }}
+
+    <a href="{{ path('folder_show', {'id': folder.id}) }}">Back to Folder</a>
+{% endblock %}

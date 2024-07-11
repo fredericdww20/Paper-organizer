@@ -1,0 +1,15 @@
+{% if item.hasChildren %}
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            {% for child in item.children %}
+                <li class="breadcrumb-item{% if child.isCurrent %} active{% endif %}"{% if child.isCurrent %} aria-current="page"{% endif %}>
+                    {% if not child.isCurrent %}
+                        <a href="{{ child.uri }}">{{ child.label }}</a>
+                    {% else %}
+                        {{ child.label }}
+                    {% endif %}
+                </li>
+            {% endfor %}
+        </ol>
+    </nav>
+{% endif %}
