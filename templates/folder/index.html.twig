@@ -1,261 +1,742 @@
-{# templates/folder/index.html.twig #}
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Folder Index</title>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+{% extends 'base.html.twig' %}
+
+{% block body %}
+<!--{{ knp_menu_render('breadcrumb_menu', {'template': 'menu/breadcrumb.html.twig'}) }}-->
+<html lang="fr">
     <style>
-        body {
-            font-family: Arial, sans-serif;
-        }
-        h1 {
-            font-size: 24px;
-        }
-        #create-folder {
-            margin-bottom: 10px;
-            display: inline-block;
-            padding: 10px 15px;
-            background-color: #007bff;
-            color: white;
-            text-decoration: none;
-            border-radius: 4px;
-        }
-        #create-folder:hover {
-            background-color: #0056b3;
-        }
-        .folder-list {
-            list-style-type: none;
-            padding-left: 0;
-        }
-        .folder-item {
-            margin-left: 20px;
-            padding: 5px 0;
-        }
-        .folder-item > span {
-            cursor: pointer;
-            color: #007bff;
-            text-decoration: underline;
-        }
-        .folder-item button {
-            margin-left: 5px;
-            padding: 5px 10px;
-            background-color: #6c757d;
-            color: white;
-            border: none;
-            border-radius: 4px;
-        }
-        .folder-item button:hover {
-            background-color: #5a6268;
-        }
-        .toggle-subfolders {
-            background-color: #28a745;
-        }
-        .toggle-subfolders:hover {
-            background-color: #218838;
-        }
-        .move-folder {
-            background-color: #ffc107;
-        }
-        .move-folder:hover {
-            background-color: #e0a800;
-        }
-        .delete-folder {
-            background-color: #dc3545;
-        }
-        .delete-folder:hover {
-            background-color: #c82333;
-        }
+        
     </style>
-</head>
-<body>
-    <h1>Folders</h1>
-    <button id="create-folder">Create new Folder</button>
-    <ul id="folder-list" class="folder-list">
-        <!-- Folders will be loaded here by AJAX -->
-    </ul>
 
-    <div id="create-folder-modal" style="display: none;">
-        <label for="new-folder-name">Folder Name:</label>
-        <input type="text" id="new-folder-name">
-        <label for="parent-folder-select">Parent Folder:</label>
-        <select id="parent-folder-select">
-            <option value="">Root</option>
-            {% for folder in folders %}
-                <option value="{{ folder.id }}">{{ folder.name }}</option>
-            {% endfor %}
-        </select>
-        <button id="create-folder-confirm">Create</button>
-        <button id="create-folder-cancel">Cancel</button>
-    </div>
+<body id="page-top">
+    <div id="wrapper">
+        <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
+            <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{{ path('folder_index') }}">
+                <div class="sidebar-brand-icon rotate-n-15">
+                    <i class="fas fa-laugh-wink"></i>
+                </div>
+                <div class="sidebar-brand-text mx-3">Paper-organizer</div>
+            </a>
 
-    <script>
-        function loadFolders() {
-            $.ajax({
-                url: '{{ path('get_folders') }}',
-                method: 'GET',
-                success: function(data) {
+            <hr class="sidebar-divider my-0">
+
+            <li class="nav-item active">
+                <a class="nav-link" href="{{ path('folder_index') }}">
+                    <i class="fas fa-fw fa-tachometer-alt"></i>
+                    <span>Dashboard</span></a>
+            </li>
+
+            <hr class="sidebar-divider">
+
+            <div class="sidebar-heading">
+                Dossier
+            </div>
+
+            <!-- Affichage des dossier et des sous dossier en AJAX -->
+            <ul id="folder-list" class="folder-list">
+                
+            </ul>
+
+            <!-- Sidebar Message -->
+            <div class="sidebar-card d-none d-lg-flex">
+                <img class="sidebar-card-illustration mb-2" src="{{ asset('assets/images/undraw_rocket.svg') }}"
+                    alt="...">
+                <p class="text-center mb-2"><strong>SB Admin Pro</strong> is packed with premium features, components,
+                    and more!</p>
+                <a class="btn btn-success btn-sm" href="https://startbootstrap.com/theme/sb-admin-pro">Upgrade to
+                    Pro!</a>
+            </div>
+
+        </ul>
+        <!-- End of Sidebar -->
+
+        <!-- Content Wrapper -->
+        <div id="content-wrapper" class="d-flex flex-column">
+
+            <!-- Main Content -->
+            <div id="content">
+
+                <!-- Topbar -->
+                <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow">
+
+                    <!-- Sidebar Toggle (Topbar) -->
+                    <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3">
+                        <i class="fa fa-bars"></i>
+                    </button>
+
+                    <!-- Topbar Search -->
+                    <form
+                        class="d-none d-sm-inline-block form-inline mr-auto ml-md-3 my-2 my-md-0 mw-100 navbar-search">
+                        <div class="input-group">
+                            <input type="text" class="form-control bg-light border-0 small" placeholder="Search for..."
+                                aria-label="Search" aria-describedby="basic-addon2">
+                            <div class="input-group-append">
+                                <button class="btn btn-primary" type="button">
+                                    <i class="fas fa-search fa-sm"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+
+                    <!-- Topbar Navbar -->
+                    <ul class="navbar-nav ml-auto">
+
+                        <!-- Nav Item - Search Dropdown (Visible Only XS) -->
+                        <li class="nav-item dropdown no-arrow d-sm-none">
+                            <a class="nav-link dropdown-toggle" href="#" id="searchDropdown" role="button"
+                                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <i class="fas fa-search fa-fw"></i>
+                            </a>
+                            <!-- Dropdown - Messages -->
+                            <div class="dropdown-menu dropdown-menu-right p-3 shadow animated--grow-in"
+                                aria-labelledby="searchDropdown">
+                                <form class="form-inline mr-auto w-100 navbar-search">
+                                    <div class="input-group">
+                                        <input type="text" class="form-control bg-light border-0 small"
+                                            placeholder="Search for..." aria-label="Search"
+                                            aria-describedby="basic-addon2">
+                                        <div class="input-group-append">
+                                            <button class="btn btn-primary" type="button">
+                                                <i class="fas fa-search fa-sm"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </li>
+
+                        <!-- Nav Item - Alerts -->
+                        <li class="nav-item dropdown no-arrow mx-1">
+                            <a class="nav-link dropdown-toggle" href="#" id="alertsDropdown" role="button"
+                                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <i class="fas fa-bell fa-fw"></i>
+                                <!-- Counter - Alerts -->
+                                <span class="badge badge-danger badge-counter">3+</span>
+                            </a>
+                            <!-- Dropdown - Alerts -->
+                            <div class="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in"
+                                aria-labelledby="alertsDropdown">
+                                <h6 class="dropdown-header">
+                                    Alerts Center
+                                </h6>
+                                <a class="dropdown-item d-flex align-items-center" href="#">
+                                    <div class="mr-3">
+                                        <div class="icon-circle bg-primary">
+                                            <i class="fas fa-file-alt text-white"></i>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div class="small text-gray-500">December 12, 2019</div>
+                                        <span class="font-weight-bold">A new monthly report is ready to download!</span>
+                                    </div>
+                                </a>
+                                <a class="dropdown-item d-flex align-items-center" href="#">
+                                    <div class="mr-3">
+                                        <div class="icon-circle bg-success">
+                                            <i class="fas fa-donate text-white"></i>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div class="small text-gray-500">December 7, 2019</div>
+                                        $290.29 has been deposited into your account!
+                                    </div>
+                                </a>
+                                <a class="dropdown-item d-flex align-items-center" href="#">
+                                    <div class="mr-3">
+                                        <div class="icon-circle bg-warning">
+                                            <i class="fas fa-exclamation-triangle text-white"></i>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div class="small text-gray-500">December 2, 2019</div>
+                                        Spending Alert: We've noticed unusually high spending for your account.
+                                    </div>
+                                </a>
+                                <a class="dropdown-item text-center small text-gray-500" href="#">Show All Alerts</a>
+                            </div>
+                        </li>
+
+                        <!-- Nav Item - Messages -->
+                        <li class="nav-item dropdown no-arrow mx-1">
+                            <a class="nav-link dropdown-toggle" href="#" id="messagesDropdown" role="button"
+                                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <i class="fas fa-envelope fa-fw"></i>
+                                <!-- Counter - Messages -->
+                                <span class="badge badge-danger badge-counter">7</span>
+                            </a>
+                            <!-- Dropdown - Messages -->
+                            <div class="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in"
+                                aria-labelledby="messagesDropdown">
+                                <h6 class="dropdown-header">
+                                    Message Center
+                                </h6>
+                                <a class="dropdown-item d-flex align-items-center" href="#">
+                                    <div class="dropdown-list-image mr-3">
+                                        <img class="rounded-circle"
+                                            src="{{ asset('assets/images/undraw_profile_1.svg') }}" alt="...">
+                                        <div class="status-indicator bg-success"></div>
+                                    </div>
+                                    <div class="font-weight-bold">
+                                        <div class="text-truncate">Hi there! I am wondering if you can help me with a
+                                            problem I've been having.</div>
+                                        <div class="small text-gray-500">Emily Fowler · 58m</div>
+                                    </div>
+                                </a>
+                                <a class="dropdown-item d-flex align-items-center" href="#">
+                                    <div class="dropdown-list-image mr-3">
+                                        <img class="rounded-circle"
+                                            src="{{ asset('assets/images/undraw_profile_2.svg') }}" alt="...">
+                                        <div class="status-indicator"></div>
+                                    </div>
+                                    <div>
+                                        <div class="text-truncate">I have the photos that you ordered last month, how
+                                            would you like them sent to you?</div>
+                                        <div class="small text-gray-500">Jae Chun · 1d</div>
+                                    </div>
+                                </a>
+                                <a class="dropdown-item d-flex align-items-center" href="#">
+                                    <div class="dropdown-list-image mr-3">
+                                        <img class="rounded-circle"
+                                            src="{{ asset('assets/images/undraw_profile_3.svg') }}" alt="...">
+                                        <div class="status-indicator bg-warning"></div>
+                                    </div>
+                                    <div>
+                                        <div class="text-truncate">Last month's report looks great, I am very happy with
+                                            the progress so far, keep up the good work!</div>
+                                        <div class="small text-gray-500">Morgan Alvarez · 2d</div>
+                                    </div>
+                                </a>
+                                <a class="dropdown-item d-flex align-items-center" href="#">
+                                    <div class="dropdown-list-image mr-3">
+                                        <img class="rounded-circle" src="https://source.unsplash.com/Mv9hjnEUHR4/60x60"
+                                            alt="...">
+                                        <div class="status-indicator bg-success"></div>
+                                    </div>
+                                    <div>
+                                        <div class="text-truncate">Am I a good boy? The reason I ask is because someone
+                                            told me that people say this to all dogs, even if they aren't good...</div>
+                                        <div class="small text-gray-500">Chicken the Dog · 2w</div>
+                                    </div>
+                                </a>
+                                <a class="dropdown-item text-center small text-gray-500" href="#">Read More Messages</a>
+                            </div>
+                        </li>
+
+                        <div class="topbar-divider d-none d-sm-block"></div>
+
+                        <!-- Nav Item - User Information -->
+                        <li class="nav-item dropdown no-arrow">
+                            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
+                                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <span class="mr-2 d-none d-lg-inline text-gray-600 small">Douglas McGee</span>
+                                <img class="img-profile rounded-circle"
+                                    src="{{ asset('assets/images/undraw_profile.svg') }}">
+                            </a>
+                            <!-- Dropdown - User Information -->
+                            <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in"
+                                aria-labelledby="userDropdown">
+                                <a class="dropdown-item" href="#">
+                                    <i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i>
+                                    Profile
+                                </a>
+                                <a class="dropdown-item" href="#">
+                                    <i class="fas fa-cogs fa-sm fa-fw mr-2 text-gray-400"></i>
+                                    Settings
+                                </a>
+                                <a class="dropdown-item" href="#">
+                                    <i class="fas fa-list fa-sm fa-fw mr-2 text-gray-400"></i>
+                                    Activity Log
+                                </a>
+                                <div class="dropdown-divider"></div>
+                                <a class="dropdown-item" href="#" data-toggle="modal" data-target="#logoutModal">
+                                    <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i>
+                                    Logout
+                                </a>
+                            </div>
+                        </li>
+
+                    </ul>
+
+                </nav>
+                <!-- End of Topbar -->
+
+                <!-- Begin Page Content -->
+                <div class="container-fluid">
+
+                    <!-- Page Heading -->
+                    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+                        <h1 class="h3 mb-0 text-gray-800">Tableaux de bord</h1>
+                        <div class="btn-group">
+                            <a href="#" id="show-upload-form"
+                            
+                                class="d-none d-sm-inline-block btn btn-sm btn-secondary shadow-sm">
+                                <i class="fas fa-plus fa-sm text-white-50"></i> Ajouter un document
+                                <a href="#" id="create-folder"
+                                    class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm ml-2">
+                                    <i class="fas fa-download fa-sm text-white-50"></i> Crée un dossier
+                                </a>
+                                <a href="#" id="show-folder-modal" class="d-none d-sm-inline-block btn btn-sm btn-secondary shadow-sm" data-bs-toggle="modal" data-bs-target="#folderModal">
+                                    <i class="fas fa-folder-plus fa-sm text-white-50"></i> Add Folder
+                                </a>
+                        </div>
+                    </div>
+
+
+                    <!-- Content Row -->
+                    <div class="row">
+
+                        <!-- Earnings (Monthly) Card Example -->
+                        <div class="col-xl-3 col-md-6 mb-4">
+                            <div class="card border-left-primary shadow h-100 py-2">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                                Earnings (Monthly)</div>
+                                            <div class="h5 mb-0 font-weight-bold text-gray-800">$40,000</div>
+                                        </div>
+                                        <div class="col-auto">
+                                            <i class="fas fa-calendar fa-2x text-gray-300"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Earnings (Monthly) Card Example -->
+                        <div class="col-xl-3 col-md-6 mb-4">
+                            <div class="card border-left-success shadow h-100 py-2">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                                Earnings (Annual)</div>
+                                            <div class="h5 mb-0 font-weight-bold text-gray-800">$215,000</div>
+                                        </div>
+                                        <div class="col-auto">
+                                            <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Earnings (Monthly) Card Example -->
+                        <div class="col-xl-3 col-md-6 mb-4">
+                            <div class="card border-left-info shadow h-100 py-2">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Tasks
+                                            </div>
+                                            <div class="row no-gutters align-items-center">
+                                                <div class="col-auto">
+                                                    <div class="h5 mb-0 mr-3 font-weight-bold text-gray-800">50%</div>
+                                                </div>
+                                                <div class="col">
+                                                    <div class="progress progress-sm mr-2">
+                                                        <div class="progress-bar bg-info" role="progressbar"
+                                                            style="width: 50%" aria-valuenow="50" aria-valuemin="0"
+                                                            aria-valuemax="100"></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-auto">
+                                            <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Pending Requests Card Example -->
+                        <div class="col-xl-3 col-md-6 mb-4">
+                            <div class="card border-left-warning shadow h-100 py-2">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                                Pending Requests</div>
+                                            <div class="h5 mb-0 font-weight-bold text-gray-800">18</div>
+                                        </div>
+                                        <div class="col-auto">
+                                            <i class="fas fa-comments fa-2x text-gray-300"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Content Row -->
+
+                    <div class="row">
+
+                        <!-- Area Chart -->
+                       
+
+                                    <!-- Modal for document preview -->
+                                    <div id="previewModal" class="modal">
+                                        <div class="modal-content">
+                                            <span class="close">&times;</span>
+                                            <iframe id="previewIframe" style="width: 100%; height: 80vh;"></iframe>
+                                        </div>
+                                    </div>
+
+                                    <div id="create-folder-modal" style="display: none;">
+                                        <label for="new-folder-name">Folder Name:</label>
+                                        <input type="text" id="new-folder-name">
+                                        <label for="parent-folder-select">Parent Folder:</label>
+                                        <select id="parent-folder-select">
+                                            <option value="">Root</option>
+                                            {% for folder in folders %}
+                                            <option value="{{ folder.id }}">{{ folder.name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                        <button id="create-folder-confirm">Create</button>
+                                        <button id="create-folder-cancel">Cancel</button>
+                                    </div>
+
+
+                                    <!-- Modal for moving folders -->
+                                    <div id="moveModal" class="modal">
+                                        <div class="modal-content">
+                                            <span class="close">&times;</span>
+                                            <h2>Move Folder</h2>
+                                            <form id="move-folder-form">
+                                                <input type="hidden" id="move-folder-id">
+                                                <label for="target-folder">Select target folder:</label>
+                                                <select id="target-folder">
+                                                    <option value="">Root</option>
+                                                    <!-- Options will be populated dynamically -->
+                                                </select>
+                                                <button type="submit">Move</button>
+                                            </form>
+                                        </div>
+                                    </div>
+
+                                    <!-- Modal for editing folders -->
+                                    <div id="editModal" class="modal">
+                                        <div class="modal-content">
+                                            <span class="close">&times;</span>
+                                            <h2>Edit Folder</h2>
+                                            <form id="edit-folder-form">
+                                                <input type="hidden" id="edit-folder-id">
+                                                <label for="edit-folder-name">Folder name:</label>
+                                                <input type="text" id="edit-folder-name">
+                                                <button type="submit">Save</button>
+                                            </form>
+                                        </div>
+                                    </div>
+
+                                    <!-- Modal for deleting folders -->
+                                    <div id="deleteModal" class="modal">
+                                        <div class="modal-content">
+                                            <span class="close">&times;</span>
+                                            <h2>Delete Folder</h2>
+                                            <form id="delete-folder-form">
+                                                <input type="hidden" id="delete-folder-id">
+                                                <input type="hidden" name="_token" id="delete-csrf-token">
+                                                <p>Are you sure you want to delete this folder?</p>
+                                                <label for="force-delete">
+                                                    <input type="checkbox" id="force-delete" name="force"> Force delete
+                                                    (also delete all subfolders and files)
+                                                </label>
+                                                <br>
+                                                <button type="submit">Delete</button>
+                                                <button type="button" class="close">Cancel</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- End of Main Content -->
+
+                <!-- Footer -->
+                <footer class="sticky-footer bg-white">
+                    <div class="container my-auto">
+                        <div class="copyright text-center my-auto">
+                            <span>Copyright &copy; Your Website 2021</span>
+                        </div>
+                    </div>
+                </footer>
+                <!-- End of Footer -->
+
+            </div>
+            <!-- End of Content Wrapper -->
+
+        </div>
+        <!-- End of Page Wrapper -->
+
+        <!-- Scroll to Top Button-->
+        <a class="scroll-to-top rounded" href="#page-top">
+            <i class="fas fa-angle-up"></i>
+        </a>
+
+        <!-- Logout Modal-->
+        <div class="modal fade" id="logoutModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="exampleModalLabel">Ready to Leave?</h5>
+                        <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">×</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">Select "Logout" below if you are ready to end your current session.</div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
+                        <a class="btn btn-primary" href="login.html">Logout</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bootstrap core JavaScript-->
+        <script src="{{ asset('assets/js/jquery.min.js') }}"></script>
+        <script src="{{ asset('assets/js/bootstrap.bundle.js') }}"></script>
+        <script src="{{ asset('assets/js/admin.min.js') }}" type="module"></script>
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <script>
+            function ajaxRequest(url, method, data, onSuccess, onError) {
+                $.ajax({
+                    url: url,
+                    method: method,
+                    contentType: 'application/json',
+                    data: data,
+                    success: onSuccess,
+                    error: function (jqXHR, textStatus, errorThrown) {
+                        console.error(`Failed to ${method} data:`, textStatus, errorThrown, jqXHR.responseText);
+                        alert(`Failed to ${method} data.`);
+                        if (onError) onError(jqXHR, textStatus, errorThrown);
+                    }
+                });
+            }
+        
+            function createDropdownMenu(id, csrfToken) {
+                return `
+                    <div class="dropdown">
+                        <button class="btn btn-link dropdown-toggle" type="button" id="dropdownMenuButton-${id}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton-${id}">
+                            <a class="dropdown-item edit-folder" data-id="${id}" href="#">Edit</a>
+                            <form class="delete-folder-form" data-id="${id}" style="display:inline;">
+                                <input type="hidden" name="_token" value="${csrfToken}">
+                                <button type="submit" class="dropdown-item delete-folder" data-id="${id}">Delete</button>
+                            </form>
+                            <a class="dropdown-item move-folder" data-id="${id}" href="#">Move</a>
+                        </div>
+                    </div>`;
+            }
+        
+            function renderFolders(folders, container) {
+                folders.forEach(folder => {
+                    let folderItem = $(`
+                        <li class="nav-item">
+                            <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapse-${folder.id}" aria-expanded="false" aria-controls="collapse-${folder.id}">
+                                <i class="fas fa-fw fa-folder"></i>
+                                <span class="folder-arrow"><i class="fas fa-caret-right"></i></span>
+                                <span class="folder-link" data-id="${folder.id}">${folder.name}</span>
+                            </a>
+                            <div class="folder-options">
+                                ${createDropdownMenu(folder.id, folder.csrf_token)}
+                            </div>
+                            <div id="collapse-${folder.id}" class="collapse" aria-labelledby="heading-${folder.id}" data-parent="#folder-list">
+                                <div class="bg-white py-2 collapse-inner rounded">
+                                    <h6 class="collapse-header">${folder.name} Subfolders:</h6>
+                                    <ul id="subfolders-${folder.id}" class="folder-list"></ul>
+                                </div>
+                            </div>
+                        </li>
+                    `);
+                    container.append(folderItem);
+                    renderSubfolders(folder.subfolders, $(`#subfolders-${folder.id}`));
+                });
+            }
+        
+            function renderSubfolders(subfolders, container) {
+                subfolders.forEach(subfolder => {
+                    let subfolderItem = $(`
+                        <li class="nav-item subfolder-options">
+                            <i class="fas fa-fw fa-folder"></i>
+                            <span class="folder-link" data-id="${subfolder.id}">${subfolder.name}</span>
+                            ${createDropdownMenu(subfolder.id, subfolder.csrf_token)}
+                        </li>
+                    `);
+                    container.append(subfolderItem);
+                    renderSubfolders(subfolder.subfolders, container);
+                });
+            }
+        
+            function loadFolders() {
+                ajaxRequest('{{ path('get_folders') }}', 'GET', null, data => {
                     let folderList = $('#folder-list');
                     folderList.empty();
                     renderFolders(data, folderList);
-                },
-                error: function(jqXHR, textStatus, errorThrown) {
-                    console.error('Failed to load folders:', textStatus, errorThrown, jqXHR.responseText);
-                    alert('Failed to load folders.');
-                }
-            });
-        }
-
-        function renderFolders(folders, container) {
-            folders.forEach(function(folder) {
-                let subfolderContainer = `<ul id="subfolders-${folder.id}" class="folder-list"></ul>`;
-                let folderItem = $(`
-                    <li class="folder-item" data-id="${folder.id}">
-                        <span class="folder-link" data-id="${folder.id}">${folder.name}</span>
-                        <button class="edit-folder" data-id="${folder.id}">Edit</button>
-                        <form class="delete-folder-form" data-id="${folder.id}" style="display:inline;">
-                            <input type="hidden" name="_token" value="${folder.csrf_token}">
-                            <button type="submit" class="delete-folder" data-id="${folder.id}">Delete</button>
-                        </form>
-                        <button class="move-folder" data-id="${folder.id}">Move</button>
-                        <button class="toggle-subfolders" data-id="${folder.id}">Toggle Subfolders</button>
-                        ${subfolderContainer}
-                    </li>
-                `);
-                container.append(folderItem);
-                renderFolders(folder.subfolders, $(`#subfolders-${folder.id}`));
-            });
-        }
-
-        $(document).ready(function() {
-            loadFolders();
-
-            $('#create-folder').on('click', function() {
-                $('#create-folder-modal').show();
-            });
-
-            $('#create-folder-confirm').on('click', function() {
-                let folderName = $('#new-folder-name').val();
-                let parentFolderId = $('#parent-folder-select').val();
-                $.ajax({
-                    url: '{{ path('folder_new') }}',
-                    method: 'POST',
-                    contentType: 'application/json',
-                    data: JSON.stringify({ name: folderName, parent_id: parentFolderId || null }),
-                    success: function() {
+                });
+            }
+        
+            $(document).ready(function () {
+                loadFolders();
+        
+                $('#create-folder').on('click', function () {
+                    $('#create-folder-modal').show();
+                });
+        
+                $('#create-folder-confirm').on('click', function () {
+                    let folderName = $('#new-folder-name').val();
+                    let parentFolderId = $('#parent-folder-select').val();
+                    ajaxRequest('{{ path('folder_new') }}', 'POST', JSON.stringify({ name: folderName, parent_id: parentFolderId || null }), () => {
                         $('#create-folder-modal').hide();
                         loadFolders();
-                    },
-                    error: function(jqXHR, textStatus, errorThrown) {
-                        console.error('Failed to create folder:', textStatus, errorThrown, jqXHR.responseText);
-                        alert('Failed to create folder.');
-                    }
+                    });
                 });
-            });
-
-            $('#create-folder-cancel').on('click', function() {
-                $('#create-folder-modal').hide();
-            });
-
-            $('#folder-list').on('click', '.folder-link', function() {
-                let folderId = $(this).data('id');
-                window.location.href = '{{ path('folder_view', {'id': 'FOLDER_ID'}) }}'.replace('FOLDER_ID', folderId);
-            });
-
-            $('#folder-list').on('click', '.edit-folder', function() {
-                let folderId = $(this).data('id');
-                let folderName = prompt('Enter new folder name:');
-                if (folderName) {
-                    $.ajax({
-                        url: '{{ path('folder_edit', {'id': 'FOLDER_ID'}) }}'.replace('FOLDER_ID', folderId),
-                        method: 'POST',
-                        contentType: 'application/json',
-                        data: JSON.stringify({ name: folderName }),
-                        success: function() {
-                            loadFolders();
-                        },
-                        error: function(jqXHR, textStatus, errorThrown) {
-                            console.error('Failed to edit folder:', textStatus, errorThrown, jqXHR.responseText);
-                            alert('Failed to edit folder.');
-                        }
+        
+                $('#create-folder-cancel').on('click', function () {
+                    $('#create-folder-modal').hide();
+                });
+        
+                $('#folder-list').on('click', '.folder-link', function () {
+                    let folderId = $(this).data('id');
+                    window.location.href = '{{ path('folder_view', {'id': 'FOLDER_ID'}) }}'.replace('FOLDER_ID', folderId);
+                });
+        
+                $('#folder-list').on('click', '.edit-folder', function () {
+                    let folderId = $(this).data('id');
+                    $('#edit-folder-id').val(folderId);
+                    let folderName = $(this).closest('.nav-item').find('.folder-link').first().text();
+                    $('#edit-folder-name').val(folderName);
+                    $('#editModal').show();
+                });
+        
+                $('#edit-folder-form').on('submit', function (e) {
+                    e.preventDefault();
+                    let folderId = $('#edit-folder-id').val();
+                    let folderName = $('#edit-folder-name').val();
+                    ajaxRequest('{{ path('folder_edit', {'id': 'FOLDER_ID'}) }}'.replace('FOLDER_ID', folderId), 'POST', JSON.stringify({ name: folderName }), () => {
+                        loadFolders();
+                        $('#editModal').hide();
                     });
-                }
-            });
-
-            $('#folder-list').on('submit', '.delete-folder-form', function(e) {
-                e.preventDefault();
-                let form = $(this);
-                let folderId = form.data('id');
-                if (confirm('Are you sure you want to delete this folder?')) {
-                    $.ajax({
-                        url: '{{ path('folder_delete', {'id': 'FOLDER_ID'}) }}'.replace('FOLDER_ID', folderId),
-                        method: 'POST',
-                        data: form.serialize(),
-                        success: function() {
+                });
+        
+                $('#folder-list').on('click', '.delete-folder', function () {
+                    let folderId = $(this).data('id');
+                    let csrfToken = $(this).siblings('.delete-folder-form').find('input[name="_token"]').val();
+                    $('#delete-folder-id').val(folderId);
+                    $('#delete-csrf-token').val(csrfToken);
+                    $('#deleteModal').show();
+                });
+        
+                $('#delete-folder-form').on('submit', function (e) {
+                    e.preventDefault();
+                    let folderId = $('#delete-folder-id').val();
+                    let csrfToken = $('#delete-csrf-token').val();
+                    let forceDelete = $('#force-delete').is(':checked');
+                    ajaxRequest('{{ path('folder_delete', {'id': 'FOLDER_ID'}) }}'.replace('FOLDER_ID', folderId), 'POST', { _token: csrfToken, force: forceDelete }, response => {
+                        if (response.success) {
                             loadFolders();
-                        },
-                        error: function(jqXHR, textStatus, errorThrown) {
-                            console.error('Failed to delete folder:', textStatus, errorThrown, jqXHR.responseText);
-                            alert('Failed to delete folder.');
+                        } else {
+                            alert(response.message || 'Failed to delete folder.');
                         }
+                        $('#deleteModal').hide();
                     });
-                }
-            });
-
-            $('#folder-list').on('click', '.move-folder', function() {
-                let folderId = $(this).data('id');
-                $.ajax({
-                    url: '{{ path('get_folders_for_move') }}',
-                    method: 'GET',
-                    success: function(data) {
+                });
+        
+                $('#folder-list').on('click', '.move-folder', function () {
+                    let folderId = $(this).data('id');
+                    $('#move-folder-id').val(folderId);
+                    ajaxRequest('{{ path('get_folders_for_move') }}', 'GET', null, data => {
                         let folderOptions = data.map(folder => `<option value="${folder.id}">${folder.name}</option>`).join('');
-                        let moveDialogHtml = `
-                            <div id="move-dialog">
-                                <label for="target-folder">Select target folder:</label>
-                                <select id="target-folder">
-                                    <option value="">Root</option>
-                                    ${folderOptions}
-                                </select>
-                                <button id="move-confirm">Move</button>
-                                <button id="move-cancel">Cancel</button>
-                            </div>
-                        `;
-                        $('body').append(moveDialogHtml);
-
-                        $('#move-confirm').on('click', function() {
-                            let targetFolderId = $('#target-folder').val();
-                            $.ajax({
-                                url: '{{ path('folder_move', {'id': 'FOLDER_ID'}) }}'.replace('FOLDER_ID', folderId),
-                                method: 'POST',
-                                contentType: 'application/json',
-                                data: JSON.stringify({ folder: targetFolderId }),
-                                success: function() {
-                                    loadFolders();
-                                    $('#move-dialog').remove();
-                                },
-                                error: function(jqXHR, textStatus, errorThrown) {
-                                    console.error('Failed to move folder:', textStatus, errorThrown, jqXHR.responseText);
-                                    alert('Failed to move folder.');
-                                    $('#move-dialog').remove();
-                                }
-                            });
-                        });
-
-                        $('#move-cancel').on('click', function() {
-                            $('#move-dialog').remove();
-                        });
-                    },
-                    error: function(jqXHR, textStatus, errorThrown) {
-                        console.error('Failed to load target folders:', textStatus, errorThrown, jqXHR.responseText);
-                        alert('Failed to load target folders.');
+                        folderOptions = '<option value="">Root</option>' + folderOptions;
+                        $('#target-folder').html(folderOptions);
+                        $('#moveModal').show();
+                    });
+                });
+        
+                $('#move-folder-form').on('submit', function (e) {
+                    e.preventDefault();
+                    let folderId = $('#move-folder-id').val();
+                    let targetFolderId = $('#target-folder').val();
+                    ajaxRequest('{{ path('folder_move', {'id': 'FOLDER_ID'}) }}'.replace('FOLDER_ID', folderId), 'POST', JSON.stringify({ folder: targetFolderId || null }), response => {
+                        if (response.success) {
+                            loadFolders();
+                        } else {
+                            alert('Failed to move folder.');
+                        }
+                        $('#moveModal').hide();
+                    });
+                });
+        
+                $('#folder-list').on('click', '.nav-link', function (event) {
+                    event.preventDefault();
+                    let target = $(this).data('target');
+                    $(target).collapse('toggle');
+                    $(this).find('.folder-arrow i').toggleClass('fa-caret-right fa-caret-down');
+                });
+        
+                $(document).on('click', '.move-link', function (event) {
+                    event.preventDefault();
+                    var moveForm = $(this).parent().find('.move-form');
+                    moveForm.toggle();
+                });
+        
+                $(document).on('click', '.preview-link', function (event) {
+                    event.preventDefault();
+                    var documentId = $(this).data('id');
+                    var iframe = $('#previewIframe');
+                    iframe.attr('src', '{{ path('document_preview', {'id': 'DOCUMENT_ID_PLACEHOLDER'}) }}'.replace('DOCUMENT_ID_PLACEHOLDER', documentId));
+                    $('#previewModal').show();
+                });
+        
+                $('.close').on('click', function () {
+                    $(this).closest('.modal').hide();
+                });
+        
+                $(window).on('click', function (event) {
+                    if ($(event.target).hasClass('modal')) {
+                        $('.modal').hide();
+                    }
+                });
+        
+                $('#show-upload-form').on('click', function (event) {
+                    event.preventDefault();
+                    let uploadFormContainer = $('#upload-form-container');
+                    if (uploadFormContainer.is(':hidden')) {
+                        uploadFormContainer.show();
+                        $(this).text('Fermer');
+                    } else {
+                        uploadFormContainer.hide();
+                        $(this).html('<i class="fas fa-plus fa-sm text-white-50"></i> Add Document');
                     }
                 });
             });
-
-            $('#folder-list').on('click', '.toggle-subfolders', function() {
-                let folderId = $(this).data('id');
-                $(`#subfolders-${folderId}`).toggle();
-            });
-        });
-    </script>
+        </script>
+        
 </body>
+
 </html>
+
+{% endblock %}

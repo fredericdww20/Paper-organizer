@@ -18,14 +18,22 @@ use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 
 class FolderController extends AbstractController
 {
-
-    #[Route('/folders', name: 'folder_index', methods: ['GET'])]
+    #[Route('/dashbord', name: 'folder_index', methods: ['GET'])]
     public function index(FolderRepository $folderRepository): Response
     {
         $folders = $folderRepository->findBy(['owner' => $this->getUser()]);
         return $this->render('folder/index.html.twig', [
             'folders' => $folders
         ]);
+    }
+
+    #[Route('/folders', name: 'get_folders', methods: ['GET'])]
+    public function getFolders(FolderRepository $folderRepository, CsrfTokenManagerInterface $csrfTokenManager): JsonResponse
+    {
+        $folders = $folderRepository->findBy(['owner' => $this->getUser(), 'parent' => null]);
+        $data = $this->getFolderData($folders, $csrfTokenManager);
+
+        return new JsonResponse($data);
     }
 
     #[Route('/folder/new', name: 'folder_new', methods: ['POST'])]
@@ -66,35 +74,44 @@ class FolderController extends AbstractController
     #[Route('/folder/{id}/delete', name: 'folder_delete', methods: ['POST'])]
     public function delete(Request $request, Folder $folder, EntityManagerInterface $entityManager): JsonResponse
     {
-    if ($folder->getOwner() !== $this->getUser()) {
-        throw $this->createAccessDeniedException();
+        if ($folder->getOwner() !== $this->getUser()) {
+            throw $this->createAccessDeniedException();
+        }
+
+        $force = $request->request->get('force', false);
+
+        if (($folder->getDocuments()->count() > 0 || $folder->getSubFolders()->count() > 0) && !$force) {
+            return new JsonResponse(['success' => false, 'message' => 'Folder not empty. Confirm deletion.'], 400);
+        }
+
+        if ($this->isCsrfTokenValid('delete' . $folder->getId(), $request->request->get('_token'))) {
+            $this->deleteFolderContents($folder, $entityManager);
+
+            $entityManager->remove($folder);
+            $entityManager->flush();
+
+            return new JsonResponse(['success' => true]);
+        }
+
+        return new JsonResponse(['success' => false], 400);
     }
 
-    $force = $request->request->get('force', false);
-
-    if (($folder->getDocuments()->count() > 0 || $folder->getSubFolders()->count() > 0) && !$force) {
-        return new JsonResponse(['success' => false, 'message' => 'Folder not empty. Confirm deletion.'], 400);
-    }
-
-    if ($this->isCsrfTokenValid('delete' . $folder->getId(), $request->request->get('_token'))) {
-        $this->deleteSubfolders($folder, $entityManager);
-
-        $entityManager->remove($folder);
-        $entityManager->flush();
-
-        return new JsonResponse(['success' => true]);
-    }
-
-    return new JsonResponse(['success' => false], 400);
-}
-
-    private function deleteSubfolders(Folder $folder, EntityManagerInterface $entityManager): void
+    private function deleteFolderContents(Folder $folder, EntityManagerInterface $entityManager): void
     {
+        // Supprimer tous les documents du dossier
+        foreach ($folder->getDocuments() as $document) {
+            $entityManager->remove($document);
+        }
+
+        // Supprimer tous les sous-dossiers et leurs contenus
         foreach ($folder->getSubfolders() as $subfolder) {
-            $this->deleteSubfolders($subfolder, $entityManager);
+            $this->deleteFolderContents($subfolder, $entityManager);
             $entityManager->remove($subfolder);
         }
     }
+
+
+
 
     #[Route('/folders/move', name: 'get_folders_for_move', methods: ['GET'])]
     public function getFoldersForMove(FolderRepository $folderRepository): JsonResponse
@@ -122,22 +139,19 @@ class FolderController extends AbstractController
         $data = json_decode($request->getContent(), true);
         $targetFolderId = $data['folder'] ?? null;
 
-        if (!$targetFolderId) {
-            return new JsonResponse('No target folder ID provided', 400);
-        }
-
-        $targetFolder = $entityManager->getRepository(Folder::class)->find($targetFolderId);
-
-        if (!$targetFolder) {
-            return new JsonResponse('Target folder not found', 404);
-        }
-
-        if ($targetFolder->getOwner() !== $this->getUser()) {
-            return new JsonResponse('Unauthorized access to target folder', 403);
-        }
-
-        if ($this->isSubfolder($folder, $targetFolder)) {
-            return new JsonResponse('Cannot move a folder into one of its subfolders', 400);
+        if ($targetFolderId) {
+            $targetFolder = $entityManager->getRepository(Folder::class)->find($targetFolderId);
+            if (!$targetFolder) {
+                return new JsonResponse('Target folder not found', 404);
+            }
+            if ($targetFolder->getOwner() !== $this->getUser()) {
+                return new JsonResponse('Unauthorized access to target folder', 403);
+            }
+            if ($this->isSubfolder($folder, $targetFolder)) {
+                return new JsonResponse('Cannot move a folder into one of its subfolders', 400);
+            }
+        } else {
+            $targetFolder = null; // Moving to root
         }
 
         $folder->setParent($targetFolder);
