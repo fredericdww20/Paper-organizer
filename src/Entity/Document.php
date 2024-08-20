@@ -17,15 +17,27 @@ class Document
     #[ORM\Column(type: 'integer')]
     private ?int $id = null;
 
-    #[ORM\Column(type: 'string', length: 255)]
+    #[ORM\Column(type: 'string', length: 255, nullable: true)]
     private ?string $title = null;
 
-    #[Vich\UploadableField(mapping: 'documents', fileNameProperty: 'fileName')]
+    #[Vich\UploadableField(mapping: 'documents', fileNameProperty: 'fileName',)]
     #[Assert\File(
-        maxSize: '5M',
-        mimeTypes: ['application/pdf', 'application/x-pdf', 'image/jpeg', 'image/png'],
-        mimeTypesMessage: 'Please upload a valid PDF or image file',
-    )]
+    maxSize: '15M',
+    mimeTypes: [
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'application/vnd.ms-powerpoint',
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        'text/plain',
+        'image/png',
+        'image/jpeg',
+        'image/webp'
+         ],
+    mimeTypesMessage: 'Please upload a valid file (PDF, Word, Excel, PowerPoint, TXT, PNG, JPEG, WEBP).'
+     )]
     private ?File $file = null;
 
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
