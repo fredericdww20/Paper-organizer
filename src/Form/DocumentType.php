@@ -20,7 +20,6 @@ class DocumentType extends AbstractType
             ])
             ->add('file', FileType::class, [
                 'required' => false,
-                'mapped' => true,
                 'label' => 'File (PDF or image)',
                 
                 
@@ -31,6 +30,7 @@ class DocumentType extends AbstractType
     {
         $resolver->setDefaults([
             'data_class' => Document::class,
+
         ]);
     }
 }

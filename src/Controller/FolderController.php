@@ -4,215 +4,285 @@
 
 namespace App\Controller;
 
-use App\Entity\Folder;
+use App\Form\FolderType;
 use App\Form\DocumentType;
+use App\Entity\Folder;
 use App\Entity\Document;
 use App\Repository\FolderRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
+use Symfony\Component\HttpFoundation\RedirectResponse;
+
 
 class FolderController extends AbstractController
 {
-    #[Route('/dashbord', name: 'folder_index', methods: ['GET'])]
-    public function index(FolderRepository $folderRepository): Response
+    #[Route('/dashboard', name: 'folder_index', methods: ['GET', 'POST'])]
+    public function index(Request $request, FolderRepository $folderRepository, EntityManagerInterface $entityManager): Response
     {
-        $folders = $folderRepository->findBy(['owner' => $this->getUser()]);
+        // Créer un nouveau dossier et le formulaire associé
+        $folder = new Folder();
+        $form = $this->createForm(FolderType::class, $folder);
+
+        $documents = new Document();
+        $formDocuments = $this->createForm(DocumentType::class, $documents);
+
+        // Gérer la requête pour le formulaire
+        $form->handleRequest($request);
+        $formDocuments->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $folder->setOwner($this->getUser());
+            $entityManager->persist($folder);
+            $entityManager->flush();
+
+            $this->addFlash('success', 'Dossier créé avec succès.');
+
+            return $this->redirectToRoute('folder_index');
+        }
+
+        if ($formDocuments->isSubmitted() && $formDocuments->isValid()) {
+            $documents->setOwner($this->getUser()); // Set the owner for the Document entity
+            $entityManager->persist($documents);
+            $entityManager->flush();
+
+            $this->addFlash('success', 'Fichier uploadé avec succès.');
+
+            // Check if the folder entity has been persisted and has an ID
+            if ($folder->getId()) {
+                return $this->redirectToRoute('folder_show', ['id' => $folder->getId()]);
+            }
+            return $this->redirectToRoute('folder_index');
+        }
+
+        // Récupérer les dossiers principaux (ceux qui n'ont pas de parent)
+        $folders = $folderRepository->findBy([
+            'owner' => $this->getUser(),
+            'parent' => null // Filtrer pour ne récupérer que les dossiers principaux
+        ]);
+
+        // Récupérer les documents
+        $documents = $entityManager->getRepository(Document::class)->findBy(['folder' => null]);
+
+
+
+        // Rendre la vue avec les dossiers et le formulaire
         return $this->render('folder/index.html.twig', [
-            'folders' => $folders
+            'folders' => $folders,
+            'documents' => $documents,
+            'form' => $form->createView(),
+            'formDocuments' => $formDocuments->createView(),
         ]);
     }
 
-    #[Route('/folders', name: 'get_folders', methods: ['GET'])]
-    public function getFolders(FolderRepository $folderRepository, CsrfTokenManagerInterface $csrfTokenManager): JsonResponse
+
+
+
+    // fonction pour editer un dossier OK
+    #[Route('/folder/{id}/edit', name: 'folder_edit', methods: ['GET', 'POST'])]
+    public function edit(Request $request, Folder $folder, EntityManagerInterface $entityManager): Response
     {
-        $folders = $folderRepository->findBy(['owner' => $this->getUser(), 'parent' => null]);
-        $data = $this->getFolderData($folders, $csrfTokenManager);
+       // $this->denyAccessUnlessGranted('EDIT', $folder);
 
-        return new JsonResponse($data);
-    }
+        $form = $this->createForm(FolderType::class, $folder);
+        $form->handleRequest($request);
 
-    #[Route('/folder/new', name: 'folder_new', methods: ['POST'])]
-    public function new(Request $request, EntityManagerInterface $entityManager): JsonResponse
-    {
-        $data = json_decode($request->getContent(), true);
-        $folder = new Folder();
-        $folder->setName($data['name']);
-        $folder->setOwner($this->getUser());
+        if ($form->isSubmitted() && $form->isValid()) {
+            $entityManager->flush();
 
-        if (isset($data['parent_id']) && !empty($data['parent_id'])) {
-            $parentFolder = $entityManager->getRepository(Folder::class)->find($data['parent_id']);
-            if ($parentFolder) {
-                $folder->setParent($parentFolder);
-            }
+            $this->addFlash('success', 'Le dossier a été modifié avec succès.');
+
+            return $this->redirectToRoute('folder_index');
         }
 
-        $entityManager->persist($folder);
-        $entityManager->flush();
-
-        return new JsonResponse(['id' => $folder->getId(), 'name' => $folder->getName()]);
-    }
-
-    #[Route('/folder/{id}/edit', name: 'folder_edit', methods: ['POST'])]
-    public function edit(Request $request, Folder $folder, EntityManagerInterface $entityManager): JsonResponse
-    {
-        if ($folder->getOwner() !== $this->getUser()) {
-            throw $this->createAccessDeniedException();
+        if ($form->isEmpty()) {
+            $this->addFlash('error', 'Le dossier n\'a pas pu être modifié.');
         }
 
-        $data = json_decode($request->getContent(), true);
-        $folder->setName($data['name']);
-        $entityManager->flush();
-
-        return new JsonResponse(['id' => $folder->getId(), 'name' => $folder->getName()]);
+        return $this->render('folder/edit.html.twig', [
+            'form' => $form->createView(),
+            'folder' => $folder,
+        ]);
     }
 
+    // fonction pour supprimer un dossier OK
     #[Route('/folder/{id}/delete', name: 'folder_delete', methods: ['POST'])]
-    public function delete(Request $request, Folder $folder, EntityManagerInterface $entityManager): JsonResponse
+    public function delete(Request $request, Folder $folder, EntityManagerInterface $entityManager): RedirectResponse
     {
-        if ($folder->getOwner() !== $this->getUser()) {
-            throw $this->createAccessDeniedException();
-        }
+        //$this->denyAccessUnlessGranted('DELETE', $folder);
 
-        $force = $request->request->get('force', false);
 
-        if (($folder->getDocuments()->count() > 0 || $folder->getSubFolders()->count() > 0) && !$force) {
-            return new JsonResponse(['success' => false, 'message' => 'Folder not empty. Confirm deletion.'], 400);
-        }
-
-        if ($this->isCsrfTokenValid('delete' . $folder->getId(), $request->request->get('_token'))) {
-            $this->deleteFolderContents($folder, $entityManager);
-
+        if ($this->isCsrfTokenValid('delete'.$folder->getId(), $request->request->get('_token'))) {
             $entityManager->remove($folder);
             $entityManager->flush();
 
-            return new JsonResponse(['success' => true]);
+            $this->addFlash('success', 'Le dossier a été supprimé avec succès.');
         }
 
-        return new JsonResponse(['success' => false], 400);
+        return $this->redirectToRoute('folder_index');
     }
 
-    private function deleteFolderContents(Folder $folder, EntityManagerInterface $entityManager): void
+    #[Route('/folder/{id}', name: 'folder_show', methods: ['GET', 'POST'])]
+    public function show(Folder $folder, Request $request, EntityManagerInterface $entityManager): Response
     {
-        // Supprimer tous les documents du dossier
-        foreach ($folder->getDocuments() as $document) {
-            $entityManager->remove($document);
-        }
-
-        // Supprimer tous les sous-dossiers et leurs contenus
-        foreach ($folder->getSubfolders() as $subfolder) {
-            $this->deleteFolderContents($subfolder, $entityManager);
-            $entityManager->remove($subfolder);
-        }
-    }
-
-
-
-
-    #[Route('/folders/move', name: 'get_folders_for_move', methods: ['GET'])]
-    public function getFoldersForMove(FolderRepository $folderRepository): JsonResponse
-    {
-        $folders = $folderRepository->findBy(['owner' => $this->getUser()]);
-        $data = [];
-
-        foreach ($folders as $folder) {
-            $data[] = [
-                'id' => $folder->getId(),
-                'name' => $folder->getName(),
-            ];
-        }
-
-        return new JsonResponse($data);
-    }
-
-    #[Route('/folder/{id}/move', name: 'folder_move', methods: ['POST'])]
-    public function move(Request $request, Folder $folder, EntityManagerInterface $entityManager): JsonResponse
-    {
+        // Vérifier que l'utilisateur connecté est le propriétaire du dossier
         if ($folder->getOwner() !== $this->getUser()) {
-            throw $this->createAccessDeniedException();
+            throw $this->createAccessDeniedException('Vous n\'avez pas le droit d\'accéder à ce dossier.');
         }
 
-        $data = json_decode($request->getContent(), true);
-        $targetFolderId = $data['folder'] ?? null;
+        // Récupérer uniquement les dossiers principaux de l'utilisateur pour le menu à gauche
+        $user = $this->getUser();
+        $folders = $entityManager->getRepository(Folder::class)->findBy([
+            'owner' => $user,
+            'parent' => null // Filtrer pour ne récupérer que les dossiers principaux
+        ]);
 
-        if ($targetFolderId) {
-            $targetFolder = $entityManager->getRepository(Folder::class)->find($targetFolderId);
-            if (!$targetFolder) {
-                return new JsonResponse('Target folder not found', 404);
-            }
-            if ($targetFolder->getOwner() !== $this->getUser()) {
-                return new JsonResponse('Unauthorized access to target folder', 403);
-            }
-            if ($this->isSubfolder($folder, $targetFolder)) {
-                return new JsonResponse('Cannot move a folder into one of its subfolders', 400);
-            }
-        } else {
-            $targetFolder = null; // Moving to root
-        }
+        // Récupérer les sous-dossiers du dossier courant
+        $subfolders = $entityManager->getRepository(Folder::class)->findBy(['parent' => $folder]);
+        $documents = $entityManager->getRepository(Document::class)->findBy(['folder' => $folder]);
+        // Créer le formulaire pour ajouter un nouveau sous-dossier dans le dossier actuel
+        $newFolder = new Folder();
+        $form = $this->createForm(FolderType::class, $newFolder, [
+            'parent' => $folder, // Passer le dossier courant comme parent
+        ]);
 
-        $folder->setParent($targetFolder);
-        $entityManager->flush();
+        $form->handleRequest($request);
 
-        return new JsonResponse(['success' => true]);
-    }
-
-    #[Route('/folder/{id}', name: 'folder_view', methods: ['GET', 'POST'])]
-    public function view(Folder $folder, FolderRepository $folderRepository, Request $request, EntityManagerInterface $entityManager, CsrfTokenManagerInterface $csrfTokenManager): Response
-    {
-        $document = new Document();
-        $document->setFolder($folder);
-        $uploadForm = $this->createForm(DocumentType::class, $document);
-        $uploadForm->handleRequest($request);
-
-        if ($uploadForm->isSubmitted() && $uploadForm->isValid()) {
-            $document->setOwner($this->getUser());
-            $entityManager->persist($document);
+        if ($form->isSubmitted() && $form->isValid()) {
+            $newFolder->setOwner($this->getUser());
+            $newFolder->setParent($folder);  // Définir le dossier courant comme parent
+            $entityManager->persist($newFolder);
             $entityManager->flush();
 
-            return $this->redirectToRoute('folder_view', ['id' => $folder->getId()]);
+            $this->addFlash('success', 'Sous-dossier créé avec succès.');
+
+            return $this->redirectToRoute('folder_show', ['id' => $folder->getId()]);
         }
 
-        $subfolders = $folderRepository->findBy(['owner' => $this->getUser(), 'parent' => $folder]);
-        $allFolders = $folderRepository->findBy(['owner' => $this->getUser()]);
+
+
+        $formDocumentsViewOrRedirect = $this->getFormUploadDocuments($request, $folder, $entityManager);
+
+        // Si la méthode retourne une redirection, on la renvoie directement
+        if ($formDocumentsViewOrRedirect instanceof RedirectResponse) {
+            return $formDocumentsViewOrRedirect;
+        }
+
 
         return $this->render('folder/show.html.twig', [
             'folder' => $folder,
-            'subfolders' => $subfolders,
-            'folders' => $allFolders,
-            'uploadForm' => $uploadForm->createView(),
+            'folders' => $folders, // Dossiers principaux pour le menu à gauche
+            'subfolders' => $subfolders, // Sous-dossiers pour le contenu principal
+            'form' => $form->createView(), // Formulaire pour ajouter un sous-dossier
+            'documents' => $documents, // Documents pour le contenu principal
+            'formDocuments' => $formDocumentsViewOrRedirect, // Formulaire pour ajouter un document
         ]);
     }
 
-    private function getFolderData($folders, CsrfTokenManagerInterface $csrfTokenManager): array
+
+    #[Route('/folder/{parentId}/subfolder/{id}', name: 'subfolder_show', methods: ['GET', 'POST'])]
+    public function showSubfolder(Folder $folder, Request $request, EntityManagerInterface $entityManager, int $parentId): Response
     {
-        $data = [];
-        foreach ($folders as $folder) {
-            $subfolders = $folder->getSubfolders();
-            $data[] = [
+        // Vérifier que l'utilisateur connecté est le propriétaire du sous-dossier
+        if ($folder->getOwner() !== $this->getUser()) {
+            throw $this->createAccessDeniedException('Vous n\'avez pas le droit d\'accéder à ce dossier.');
+        }
+
+        // Récupérer uniquement les dossiers principaux de l'utilisateur pour le menu à gauche
+        $user = $this->getUser();
+        $folders = $entityManager->getRepository(Folder::class)->findBy([
+            'owner' => $user,
+            'parent' => null // Filtrer pour ne récupérer que les dossiers principaux
+        ]);
+
+
+        // Récupérer les sous-dossiers du sous-dossier courant
+        $subfolders = $entityManager->getRepository(Folder::class)->findBy(['parent' => $folder]);
+
+        // Créer le formulaire pour ajouter un nouveau sous-dossier dans le sous-dossier actuel
+        $newFolder = new Folder();
+        $form = $this->createForm(FolderType::class, $newFolder, [
+            'parent' => $folder, // Passer le sous-dossier courant comme parent
+        ]);
+
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $newFolder->setOwner($this->getUser());
+            $newFolder->setParent($folder);  // Définir le sous-dossier courant comme parent
+            $entityManager->persist($newFolder);
+            $entityManager->flush();
+
+            $this->addFlash('success', 'Sous-dossier créé avec succès.');
+
+            return $this->redirectToRoute('subfolder_show', [
+                'parentId' => $parentId,
                 'id' => $folder->getId(),
-                'name' => $folder->getName(),
-                'csrf_token' => $csrfTokenManager->getToken('delete' . $folder->getId())->getValue(),
-                'subfolders' => $this->getFolderData($subfolders, $csrfTokenManager)
-            ];
+            ]);
         }
-        return $data;
+
+
+        $formDocumentsViewOrRedirect = $this->getFormUploadDocuments($request, $folder, $entityManager);
+
+        // Si la méthode retourne une redirection, on la renvoie directement
+        if ($formDocumentsViewOrRedirect instanceof RedirectResponse) {
+            return $formDocumentsViewOrRedirect;
+        }
+
+        return $this->render('folder/show_subfolder.html.twig', [
+            'folder' => $folder,
+            'folders' => $folders, // Dossiers principaux pour le menu à gauche
+            'subfolders' => $subfolders, // Sous-dossiers pour le contenu principal
+            'form' => $form->createView(), // Formulaire pour ajouter un sous-dossier
+            'formDocuments' => $formDocumentsViewOrRedirect, // Formulaire pour ajouter un document
+
+        ]);
     }
 
-    private function isSubfolder(Folder $folder, Folder $potentialParent): bool
+    public function getFormUploadDocuments(Request $request, Folder $folder, EntityManagerInterface $entityManager): \Symfony\Component\Form\FormView|RedirectResponse
     {
-        $current = $potentialParent;
+        $documents = new Document();
+        $formDocuments = $this->createForm(DocumentType::class, $documents);
 
-        while ($current !== null) {
-            if ($current->getId() === $folder->getId()) {
-                return true;
+        $formDocuments->handleRequest($request);
+
+        if ($formDocuments->isSubmitted() && $formDocuments->isValid()) {
+            // Assigner l'utilisateur courant comme propriétaire du document
+            $documents->setOwner($this->getUser());
+
+            // Associer le document au dossier
+            $documents->setFolder($folder);
+
+            // Enregistrer l'entité Document dans la base de données
+            $entityManager->persist($documents);
+            $entityManager->flush();
+
+            // Ajouter un message flash de succès
+            $this->addFlash('success', 'Fichier uploadé avec succès.');
+
+            // On verie que l'on et pas dans un sous-dossier dans  quel cas on retourne une redirection dans le sous-dossier en question
+            if ($folder->getParent() !== null) {
+                return $this->redirectToRoute('subfolder_show', [
+                    'parentId' => $folder->getParent()->getId(),
+                    'id' => $folder->getId(),
+                ]);
             }
-            $current = $current->getParent();
+            // Retourner une redirection si le formulaire est soumis et valide
+            return $this->redirectToRoute('folder_show', ['id' => $folder->getId()]);
         }
 
-        return false;
+        // Retourner la vue du formulaire si le formulaire n'a pas été soumis ou est invalide
+        return $formDocuments->createView();
     }
+
+
+
+
+
+
+
+
+
 }

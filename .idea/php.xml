@@ -149,6 +149,60 @@
       <path value="$PROJECT_DIR$/vendor/sebastian/type" />
     </include_path>
   </component>
+  <component name="PhpInterpreters">
+    <interpreters>
+      <interpreter id="16d89c00-1baf-464c-b85f-b2678d3ce61b" name="Php 8.3.1" home="C:\MAMP\bin\php\php8.3.1\php.exe" auto="true" debugger_id="php.debugger.XDebug" custom_ini="C:\MAMP\bin\php\php8.3.1\php.ini" />
+    </interpreters>
+  </component>
+  <component name="PhpInterpretersPhpInfoCache">
+    <phpInfoCache>
+      <interpreter name="Php 8.3.1">
+        <phpinfo binary_type="PHP" php_cgi="C:\MAMP\bin\php\php8.3.1\php-cgi.exe" php_cli="C:\MAMP\bin\php\php8.3.1\php.exe" path_separator=";" version="8.3.1">
+          <additional_php_ini />
+          <configuration_file>C:\MAMP\bin\php\php8.3.1\php.ini</configuration_file>
+          <configuration_options>
+            <configuration_option name="include_path" value=".;C:\php\pear" />
+          </configuration_options>
+          <debuggers />
+          <loaded_extensions>
+            <extension name="Core" />
+            <extension name="PDO" />
+            <extension name="Phar" />
+            <extension name="Reflection" />
+            <extension name="SPL" />
+            <extension name="SimpleXML" />
+            <extension name="bcmath" />
+            <extension name="calendar" />
+            <extension name="com_dotnet" />
+            <extension name="ctype" />
+            <extension name="date" />
+            <extension name="dom" />
+            <extension name="filter" />
+            <extension name="hash" />
+            <extension name="iconv" />
+            <extension name="json" />
+            <extension name="libxml" />
+            <extension name="mysqli" />
+            <extension name="mysqlnd" />
+            <extension name="odbc" />
+            <extension name="pcre" />
+            <extension name="random" />
+            <extension name="readline" />
+            <extension name="session" />
+            <extension name="soap" />
+            <extension name="sockets" />
+            <extension name="standard" />
+            <extension name="tokenizer" />
+            <extension name="xml" />
+            <extension name="xmlreader" />
+            <extension name="xmlwriter" />
+            <extension name="zip" />
+            <extension name="zlib" />
+          </loaded_extensions>
+        </phpinfo>
+      </interpreter>
+    </phpInfoCache>
+  </component>
   <component name="PhpProjectSharedConfiguration" php_language_level="8.1" />
   <component name="PhpStanOptionsConfiguration">
     <option name="transferred" value="true" />

@@ -19,7 +19,6 @@ use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use App\Service\DirectoryNamer;
 use Vich\UploaderBundle\Mapping\PropertyMapping;
 
-#[Route('/document')]
 class DocumentController extends AbstractController
 {
     private $security;
@@ -33,133 +32,76 @@ class DocumentController extends AbstractController
         $this->directoryNamer = $directoryNamer;
     }
 
-    #[Route('/{id}/delete', name: 'document_delete', methods: ['POST'])]
-    public function delete(Request $request, Document $document, EntityManagerInterface $entityManager): Response
+
+    // Afficher la liste des documents dans un dossier
+    #[Route('/folder/{id}', name: 'folder_show')]
+    public function show(Folder $folder, FolderRepository $folderRepository): Response
     {
-        if ($document->getOwner() !== $this->getUser()) {
-            throw $this->createAccessDeniedException();
-        }
-
-        $folderId = $document->getFolder()->getId();
-
-        if ($this->isCsrfTokenValid('delete'.$document->getId(), $request->request->get('_token'))) {
-            $entityManager->remove($document);
-            $entityManager->flush();
-
-            return $this->redirectToRoute('folder_view', ['id' => $folderId]);
-        }
-
-        return new Response('Invalid CSRF token', 400);
-    }
-
-    #[Route('/{id}/move', name: 'document_move', methods: ['POST'])]
-    public function move(Request $request, Document $document, EntityManagerInterface $entityManager): Response
-    {
-        $folderId = $request->request->get('folder');
-        if (!$folderId) {
-            return $this->redirectToRoute('folder_view', ['id' => $document->getFolder()->getId(), 'error' => 'No folder ID provided']);
-        }
-
-        $folder = $entityManager->getRepository(Folder::class)->find($folderId);
-
-        if (!$folder) {
-            return $this->redirectToRoute('folder_view', ['id' => $document->getFolder()->getId(), 'error' => 'Invalid folder ID']);
-        }
-
+        // Vérifier que l'utilisateur connecté est le propriétaire du dossier
         if ($folder->getOwner() !== $this->getUser()) {
-            return $this->redirectToRoute('folder_view', ['id' => $document->getFolder()->getId(), 'error' => 'User does not own the target folder']);
+            throw $this->createAccessDeniedException('Vous n\'avez pas le droit d\'accéder à ce dossier.');
         }
 
-        $document->setFolder($folder);
-        $entityManager->flush();
-
-        return $this->redirectToRoute('folder_view', ['id' => $folder->getId()]);
+        return $this->render('folder/show.html.twig', [
+            'folder' => $folder,
+            'subfolders' => $folderRepository->findBy(['parent' => $folder]),
+        ]);
     }
 
-
-    #[Route('/download/{id}', name: 'document_download', methods: ['GET'])]
-    public function download(Document $document, ParameterBagInterface $params): Response
+    #[Route('/folder/{id}/upload', name: 'document_upload', methods: ['GET', 'POST'])]
+    public function upload(Folder $folder, Request $request, EntityManagerInterface $entityManager): Response
     {
-        $user = $document->getOwner();
-
-        $filePath = $params->get('kernel.project_dir') . '/public/uploads/documents/' . $user->getUserIdentifier() . '/' . $document->getFileName();
-
-        if (!file_exists($filePath)) {
-            throw $this->createNotFoundException('The file does not exist');
+        // Vérifier que l'utilisateur connecté est le propriétaire du dossier
+        if ($folder->getOwner() !== $this->getUser()) {
+            throw $this->createAccessDeniedException('Vous n\'avez pas le droit d\'accéder à ce dossier.');
         }
 
-        return $this->file($filePath, $document->getFileName(), ResponseHeaderBag::DISPOSITION_ATTACHMENT);
-    }
-
-    #[Route('/upload/{folder}', name: 'document_upload', methods: ['POST'])]
-    public function upload(Request $request, Folder $folder, EntityManagerInterface $entityManager, LoggerInterface $logger): JsonResponse
-    {
+        // Gestion de l'upload de fichier
         $document = new Document();
-
-        // Assurez-vous que le propriétaire du dossier est défini
-        if ($folder->getOwner() !== $this->getUser()) {
-            return new JsonResponse(['success' => false, 'message' => 'Unauthorized'], 403);
-        }
+        $document->setFolder($folder);
+        $document->setOwner($this->getUser());
 
         $form = $this->createForm(DocumentType::class, $document);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $document->setFolder($folder);
-            $document->setOwner($this->getUser()); // Assurez-vous que le propriétaire du document est défini
-            $document->setUpdatedAt(new \DateTimeImmutable());
-            $document->setCreatedAt(new \DateTimeImmutable());
-
             $entityManager->persist($document);
             $entityManager->flush();
 
-            $logger->info('Document persisted with ID: ' . $document->getId());
-            $logger->info('File name: ' . $document->getFileName());
+            $this->addFlash('success', 'Fichier uploadé avec succès.');
 
-            return new JsonResponse(['success' => true, 'document' => [
-                'id' => $document->getId(),
-                'title' => $document->getTitle(),
-                'fileName' => $document->getFileName(),
-                'folder' => $folder->getId()
-            ]]);
+            return $this->redirectToRoute('folder_show', ['id' => $folder->getId()]);
         }
 
-        if ($form->isSubmitted() && !$form->isValid()) {
-            $logger->error('Form is invalid.');
-            $errors = [];
-            foreach ($form->getErrors(true, false) as $error) {
-                $errors[] = $error->getMessage();
-            }
-            return new JsonResponse(['success' => false, 'errors' => $errors], 400);
-        }
-
-        return new JsonResponse(['success' => false, 'message' => 'Invalid request'], 400);
+        return $this->render('document/upload.html.twig', [
+            'folder' => $folder,
+            'form' => $form->createView(),
+        ]);
     }
 
-    #[Route('/folders', name: 'get_folders', methods: ['GET'])]
-    public function getFolders(FolderRepository $folderRepository): JsonResponse
-    {
-        $folders = $folderRepository->findBy(['owner' => $this->getUser()]);
-        $data = $this->getFolderData($folders);
-
-        return new JsonResponse($data);
-    }
-
-    private function getFolderData($folders): array
-    {
-        $data = [];
-        foreach ($folders as $folder) {
-            $data[] = [
-                'id' => $folder->getId(),
-                'name' => $folder->getName(),
-                'subfolders' => $this->getFolderData($folder->getSubfolders()->toArray())
-            ];
-        }
-        return $data;
-    }
 
     #[Route('/{id}/preview', name: 'document_preview', methods: ['GET'])]
     public function preview(Document $document): Response
+    {
+        $response = $this->getResponse($document);
+
+        return $response;
+    }
+
+    #[Route('/{id}/download', name: 'document_download', methods: ['GET'])]
+    public function download(Document $document): Response
+    {
+        $response = $this->getResponse($document);
+        $response->headers->set('Content-Disposition', 'attachment; filename="' . $document->getFileName() . '"');
+
+        return $response;
+    }
+
+    /**
+     * @param Document $document
+     * @return Response
+     */
+    public function getResponse(Document $document): Response
     {
         $mapping = new PropertyMapping('file', 'file');
 
@@ -174,7 +116,33 @@ class DocumentController extends AbstractController
         $response = new Response();
         $response->setContent(file_get_contents($filePath));
         $response->headers->set('Content-Type', mime_content_type($filePath));
-
         return $response;
     }
+
+    #[Route('/{id}/delete', name: 'document_delete', methods: ['GET'])]
+    public function delete(Request $request, Document $document, EntityManagerInterface $entityManager): \Symfony\Component\HttpFoundation\RedirectResponse
+    {
+        $folder = $document->getFolder();
+        $response = $this->getResponse($document);
+        $response->headers->set('Content-Disposition', 'attachment; filename="' . $document->getFileName() . '"');
+
+
+
+            $entityManager->remove($document);
+            $entityManager->flush();
+
+            $this->addFlash('success', 'Le document a été supprimé avec succès.');
+
+            if ($folder === null) {
+                return $this->redirectToRoute('folder_index');
+            }
+        return $this->redirectToRoute('folder_show', ['id' => $document->getFolder()->getId()]);
+
+
+
+
+
+    }
+
+
 }

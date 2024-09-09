@@ -3,9 +3,6 @@
 {% block body %}
 <!--{{ knp_menu_render('breadcrumb_menu', {'template': 'menu/breadcrumb.html.twig'}) }}-->
 <html lang="fr">
-    <style>
-        
-    </style>
 
 <body id="page-top">
     <div id="wrapper">
@@ -27,29 +24,41 @@
 
             <hr class="sidebar-divider">
 
-            <div class="sidebar-heading">
+            <div class="sidebar-heading text-white">
                 Dossier
             </div>
 
-            <!-- Affichage des dossier et des sous dossier en AJAX -->
-            <ul id="folder-list" class="folder-list">
-                
-            </ul>
+            {% if folders is empty %}
+                <p>Vous n'avez pas encore de dossiers.</p>
+            {% else %}
+                <ul>
+                    {% for folder in folders %}
+                        <li>
+                            <a class="text-white" href="{{ path('folder_show', {'id': folder.id}) }}">
+                                {{ folder.name }}
+                            </a>
+                            <a class="btn btn-success" href="{{ path('folder_edit', {id: folder.id}) }}">Edit</a>
+                            <form method="post" action="{{ path('folder_delete', {id: folder.id}) }}" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this folder?');">
+                                <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ folder.id) }}">
+                                <button type="submit" class="btn btn-danger">Delete</button>
+                            </form>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
 
             <!-- Sidebar Message -->
             <div class="sidebar-card d-none d-lg-flex">
-                <img class="sidebar-card-illustration mb-2" src="{{ asset('assets/images/undraw_rocket.svg') }}"
+                <img class="sidebar-card-illustration mb-2" src="{{ asset('/img/undraw_rocket.svg') }}"
                     alt="...">
                 <p class="text-center mb-2"><strong>SB Admin Pro</strong> is packed with premium features, components,
                     and more!</p>
-                <a class="btn btn-success btn-sm" href="https://startbootstrap.com/theme/sb-admin-pro">Upgrade to
+                <a class="btn btn-success btn-sm" href="">Upgrade to
                     Pro!</a>
             </div>
 
         </ul>
-        <!-- End of Sidebar -->
 
-        <!-- Content Wrapper -->
         <div id="content-wrapper" class="d-flex flex-column">
 
             <!-- Main Content -->
@@ -63,7 +72,7 @@
                         <i class="fa fa-bars"></i>
                     </button>
 
-                    <!-- Topbar Search -->
+                    <!-- Permet d'affichher la barre de recherche -->
                     <form
                         class="d-none d-sm-inline-block form-inline mr-auto ml-md-3 my-2 my-md-0 mw-100 navbar-search">
                         <div class="input-group">
@@ -104,152 +113,31 @@
                             </div>
                         </li>
 
-                        <!-- Nav Item - Alerts -->
-                        <li class="nav-item dropdown no-arrow mx-1">
-                            <a class="nav-link dropdown-toggle" href="#" id="alertsDropdown" role="button"
-                                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <i class="fas fa-bell fa-fw"></i>
-                                <!-- Counter - Alerts -->
-                                <span class="badge badge-danger badge-counter">3+</span>
-                            </a>
-                            <!-- Dropdown - Alerts -->
-                            <div class="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in"
-                                aria-labelledby="alertsDropdown">
-                                <h6 class="dropdown-header">
-                                    Alerts Center
-                                </h6>
-                                <a class="dropdown-item d-flex align-items-center" href="#">
-                                    <div class="mr-3">
-                                        <div class="icon-circle bg-primary">
-                                            <i class="fas fa-file-alt text-white"></i>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <div class="small text-gray-500">December 12, 2019</div>
-                                        <span class="font-weight-bold">A new monthly report is ready to download!</span>
-                                    </div>
-                                </a>
-                                <a class="dropdown-item d-flex align-items-center" href="#">
-                                    <div class="mr-3">
-                                        <div class="icon-circle bg-success">
-                                            <i class="fas fa-donate text-white"></i>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <div class="small text-gray-500">December 7, 2019</div>
-                                        $290.29 has been deposited into your account!
-                                    </div>
-                                </a>
-                                <a class="dropdown-item d-flex align-items-center" href="#">
-                                    <div class="mr-3">
-                                        <div class="icon-circle bg-warning">
-                                            <i class="fas fa-exclamation-triangle text-white"></i>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <div class="small text-gray-500">December 2, 2019</div>
-                                        Spending Alert: We've noticed unusually high spending for your account.
-                                    </div>
-                                </a>
-                                <a class="dropdown-item text-center small text-gray-500" href="#">Show All Alerts</a>
-                            </div>
-                        </li>
-
-                        <!-- Nav Item - Messages -->
-                        <li class="nav-item dropdown no-arrow mx-1">
-                            <a class="nav-link dropdown-toggle" href="#" id="messagesDropdown" role="button"
-                                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <i class="fas fa-envelope fa-fw"></i>
-                                <!-- Counter - Messages -->
-                                <span class="badge badge-danger badge-counter">7</span>
-                            </a>
-                            <!-- Dropdown - Messages -->
-                            <div class="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in"
-                                aria-labelledby="messagesDropdown">
-                                <h6 class="dropdown-header">
-                                    Message Center
-                                </h6>
-                                <a class="dropdown-item d-flex align-items-center" href="#">
-                                    <div class="dropdown-list-image mr-3">
-                                        <img class="rounded-circle"
-                                            src="{{ asset('assets/images/undraw_profile_1.svg') }}" alt="...">
-                                        <div class="status-indicator bg-success"></div>
-                                    </div>
-                                    <div class="font-weight-bold">
-                                        <div class="text-truncate">Hi there! I am wondering if you can help me with a
-                                            problem I've been having.</div>
-                                        <div class="small text-gray-500">Emily Fowler · 58m</div>
-                                    </div>
-                                </a>
-                                <a class="dropdown-item d-flex align-items-center" href="#">
-                                    <div class="dropdown-list-image mr-3">
-                                        <img class="rounded-circle"
-                                            src="{{ asset('assets/images/undraw_profile_2.svg') }}" alt="...">
-                                        <div class="status-indicator"></div>
-                                    </div>
-                                    <div>
-                                        <div class="text-truncate">I have the photos that you ordered last month, how
-                                            would you like them sent to you?</div>
-                                        <div class="small text-gray-500">Jae Chun · 1d</div>
-                                    </div>
-                                </a>
-                                <a class="dropdown-item d-flex align-items-center" href="#">
-                                    <div class="dropdown-list-image mr-3">
-                                        <img class="rounded-circle"
-                                            src="{{ asset('assets/images/undraw_profile_3.svg') }}" alt="...">
-                                        <div class="status-indicator bg-warning"></div>
-                                    </div>
-                                    <div>
-                                        <div class="text-truncate">Last month's report looks great, I am very happy with
-                                            the progress so far, keep up the good work!</div>
-                                        <div class="small text-gray-500">Morgan Alvarez · 2d</div>
-                                    </div>
-                                </a>
-                                <a class="dropdown-item d-flex align-items-center" href="#">
-                                    <div class="dropdown-list-image mr-3">
-                                        <img class="rounded-circle" src="https://source.unsplash.com/Mv9hjnEUHR4/60x60"
-                                            alt="...">
-                                        <div class="status-indicator bg-success"></div>
-                                    </div>
-                                    <div>
-                                        <div class="text-truncate">Am I a good boy? The reason I ask is because someone
-                                            told me that people say this to all dogs, even if they aren't good...</div>
-                                        <div class="small text-gray-500">Chicken the Dog · 2w</div>
-                                    </div>
-                                </a>
-                                <a class="dropdown-item text-center small text-gray-500" href="#">Read More Messages</a>
-                            </div>
-                        </li>
-
                         <div class="topbar-divider d-none d-sm-block"></div>
 
                         <!-- Nav Item - User Information -->
                         <li class="nav-item dropdown no-arrow">
                             <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
                                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <span class="mr-2 d-none d-lg-inline text-gray-600 small">Douglas McGee</span>
+                                <span class="mr-2 d-none d-lg-inline text-gray-600 small">{{ app.user.email }}</span>
                                 <img class="img-profile rounded-circle"
-                                    src="{{ asset('assets/images/undraw_profile.svg') }}">
+                                    src="{{ asset('/img/undraw_profile.svg') }}">
                             </a>
                             <!-- Dropdown - User Information -->
                             <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in"
                                 aria-labelledby="userDropdown">
                                 <a class="dropdown-item" href="#">
                                     <i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i>
-                                    Profile
+                                    Profil
                                 </a>
                                 <a class="dropdown-item" href="#">
                                     <i class="fas fa-cogs fa-sm fa-fw mr-2 text-gray-400"></i>
-                                    Settings
-                                </a>
-                                <a class="dropdown-item" href="#">
-                                    <i class="fas fa-list fa-sm fa-fw mr-2 text-gray-400"></i>
-                                    Activity Log
+                                    Réglages
                                 </a>
                                 <div class="dropdown-divider"></div>
-                                <a class="dropdown-item" href="#" data-toggle="modal" data-target="#logoutModal">
+                                <a class="dropdown-item" href="{{ path('app_logout') }}" data-toggle="modal" data-target="#logoutModal">
                                     <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i>
-                                    Logout
+                                    Déconnexion
                                 </a>
                             </div>
                         </li>
@@ -266,194 +154,142 @@
                     <div class="d-sm-flex align-items-center justify-content-between mb-4">
                         <h1 class="h3 mb-0 text-gray-800">Tableaux de bord</h1>
                         <div class="btn-group">
-                            <a href="#" id="show-upload-form"
-                            
-                                class="d-none d-sm-inline-block btn btn-sm btn-secondary shadow-sm">
-                                <i class="fas fa-plus fa-sm text-white-50"></i> Ajouter un document
-                                <a href="#" id="create-folder"
-                                    class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm ml-2">
-                                    <i class="fas fa-download fa-sm text-white-50"></i> Crée un dossier
+                            <a href="#" id="show-upload-form" class="">
+                                <a href="#"
+                                   class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm ml-2"
+                                   data-toggle="modal" data-target="#folderModal">
+                                    <i class="fas fa-folder-plus fa-sm text-white-50"></i> Crée un dossier
                                 </a>
-                                <a href="#" id="show-folder-modal" class="d-none d-sm-inline-block btn btn-sm btn-secondary shadow-sm" data-bs-toggle="modal" data-bs-target="#folderModal">
-                                    <i class="fas fa-folder-plus fa-sm text-white-50"></i> Add Folder
+                                <a href="#"
+                                   class="d-none d-sm-inline-block btn btn-sm btn-secondary shadow-sm ml-2"
+                                   data-toggle="modal" data-target="#uploadModal">
+                                    <i class="fas fa-plus fa-sm text-white-50"></i> Ajouter un document
                                 </a>
+                            </a>
                         </div>
                     </div>
+
+                    <!-- ICI TOUT LES MESSAGES SERONT AFFICHES -->
+
+                    {% for message in app.flashes('success') %}
+                        <div class="flash-success flash-message">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                    {% for message in app.flashes('error') %}
+                        <div class="flash-error flash-message">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+
+                    <!-- FIN DE L'AFFICHAGE DES MESSAGES -->
+
+                    <!-- ICI TOUTE LES MODALES SERONT AFFICHEES -->
+
+                    <!-- Modal pour ajouter un dossier -->
+                    <div class="modal fade" id="folderModal" tabindex="-1" role="dialog" aria-labelledby="folderModalLabel" aria-hidden="true">
+                        <div class="modal-dialog" role="document">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="folderModalLabel">Créer un nouveau dossier</h5>
+                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
+                                </div>
+                                <div class="modal-body">
+                                    {{ form_start(form) }}
+                                    <div class="form-group">
+                                        {{ form_label(form.name, 'Nom du dossier') }}
+                                        {{ form_widget(form.name, {'attr': {'class': 'form-control'}}) }}
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Fermer</button>
+                                    <button type="submit" class="btn btn-primary">{{ button_label|default('Enregistrer') }}</button>
+                                    {# Cacher le champ parent #}
+                                    {% if form.parent is defined %}
+                                        <div style="display: none">  {{ form_label(form.parent, 'Dossier parent')}}</div>
+                                        {{ form_widget(form.parent, { 'attr': {'class': 'd-none'} }) }}
+
+                                    {% endif %}
+                                    {{ form_end(form) }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Modal pour ajouter un document -->
+                    <div class="modal fade" id="uploadModal" tabindex="-1" role="dialog" aria-labelledby="uploadModalLabel" aria-hidden="true">
+                        <div class="modal-dialog" role="document">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="uploadModalLabel">Ajouter un document</h5>
+                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
+                                </div>
+                                <div class="modal-body">
+                                    {{ form_start(formDocuments) }}
+                                    {{ form_row(formDocuments.title) }}
+                                    {{ form_row(formDocuments.file) }}
+                                    <button class="btn">{{ button_label|default('Upload') }}</button>
+                                    {{ form_end(formDocuments) }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- FIN DE L'AFFICHAGE DES MODALES -->
+
+
 
 
                     <!-- Content Row -->
                     <div class="row">
-
-                        <!-- Earnings (Monthly) Card Example -->
-                        <div class="col-xl-3 col-md-6 mb-4">
-                            <div class="card border-left-primary shadow h-100 py-2">
-                                <div class="card-body">
-                                    <div class="row no-gutters align-items-center">
-                                        <div class="col mr-2">
-                                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                                Earnings (Monthly)</div>
-                                            <div class="h5 mb-0 font-weight-bold text-gray-800">$40,000</div>
-                                        </div>
-                                        <div class="col-auto">
-                                            <i class="fas fa-calendar fa-2x text-gray-300"></i>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Earnings (Monthly) Card Example -->
-                        <div class="col-xl-3 col-md-6 mb-4">
-                            <div class="card border-left-success shadow h-100 py-2">
-                                <div class="card-body">
-                                    <div class="row no-gutters align-items-center">
-                                        <div class="col mr-2">
-                                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                                                Earnings (Annual)</div>
-                                            <div class="h5 mb-0 font-weight-bold text-gray-800">$215,000</div>
-                                        </div>
-                                        <div class="col-auto">
-                                            <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Earnings (Monthly) Card Example -->
-                        <div class="col-xl-3 col-md-6 mb-4">
-                            <div class="card border-left-info shadow h-100 py-2">
-                                <div class="card-body">
-                                    <div class="row no-gutters align-items-center">
-                                        <div class="col mr-2">
-                                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Tasks
-                                            </div>
+                        {% if documents is empty %}
+                            <p class="ml-3">Aucun document pour le moment.</p>
+                        {% else %}
+                            {% for document in documents %}
+                                <div class="col-3">
+                                    <div class="card border-left-primary shadow h-100 py-2">
+                                        <div class="card-body">
                                             <div class="row no-gutters align-items-center">
-                                                <div class="col-auto">
-                                                    <div class="h5 mb-0 mr-3 font-weight-bold text-gray-800">50%</div>
+                                                <div class="col mr-2">
+                                                    <div class="text-xl font-weight-bold text-primary text-uppercase mb-1">
+                                                        {% if document.title is empty %}
+                                                            {{ document.fileName|slice(0,11) }}
+                                                        {% else %}
+                                                            {{ document.title }}
+                                                        {% endif %}
+                                                    </div>
+                                                    <div class="text-l mb-0 text-gray-800">
+                                                        <a href="#" class="preview-link" data-id="{{ document.id }}">Aperçu</a>
+                                                    </div>
                                                 </div>
-                                                <div class="col">
-                                                    <div class="progress progress-sm mr-2">
-                                                        <div class="progress-bar bg-info" role="progressbar"
-                                                            style="width: 50%" aria-valuenow="50" aria-valuemin="0"
-                                                            aria-valuemax="100"></div>
+                                                <div class="col-auto">
+                                                    <div class="dropdown no-arrow">
+                                                        <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink"
+                                                           data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                                            <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                                                        </a>
+                                                        <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in"
+                                                             aria-labelledby="dropdownMenuLink">
+                                                            <a class="dropdown-item" href="{{ path('document_download', { id: document.id }) }}">Télécharger</a>
+                                                            <a class="dropdown-item" href="{{ path('document_delete', { id: document.id }) }}">Supprimer</a>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="col-auto">
-                                            <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
-                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        </div>
-
-                        <!-- Pending Requests Card Example -->
-                        <div class="col-xl-3 col-md-6 mb-4">
-                            <div class="card border-left-warning shadow h-100 py-2">
-                                <div class="card-body">
-                                    <div class="row no-gutters align-items-center">
-                                        <div class="col mr-2">
-                                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                                                Pending Requests</div>
-                                            <div class="h5 mb-0 font-weight-bold text-gray-800">18</div>
-                                        </div>
-                                        <div class="col-auto">
-                                            <i class="fas fa-comments fa-2x text-gray-300"></i>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                            {% endfor %}
+                        {% endif %}
                     </div>
 
-                    <!-- Content Row -->
-
-                    <div class="row">
-
-                        <!-- Area Chart -->
-                       
-
-                                    <!-- Modal for document preview -->
-                                    <div id="previewModal" class="modal">
-                                        <div class="modal-content">
-                                            <span class="close">&times;</span>
-                                            <iframe id="previewIframe" style="width: 100%; height: 80vh;"></iframe>
-                                        </div>
-                                    </div>
-
-                                    <div id="create-folder-modal" style="display: none;">
-                                        <label for="new-folder-name">Folder Name:</label>
-                                        <input type="text" id="new-folder-name">
-                                        <label for="parent-folder-select">Parent Folder:</label>
-                                        <select id="parent-folder-select">
-                                            <option value="">Root</option>
-                                            {% for folder in folders %}
-                                            <option value="{{ folder.id }}">{{ folder.name }}</option>
-                                            {% endfor %}
-                                        </select>
-                                        <button id="create-folder-confirm">Create</button>
-                                        <button id="create-folder-cancel">Cancel</button>
-                                    </div>
 
 
-                                    <!-- Modal for moving folders -->
-                                    <div id="moveModal" class="modal">
-                                        <div class="modal-content">
-                                            <span class="close">&times;</span>
-                                            <h2>Move Folder</h2>
-                                            <form id="move-folder-form">
-                                                <input type="hidden" id="move-folder-id">
-                                                <label for="target-folder">Select target folder:</label>
-                                                <select id="target-folder">
-                                                    <option value="">Root</option>
-                                                    <!-- Options will be populated dynamically -->
-                                                </select>
-                                                <button type="submit">Move</button>
-                                            </form>
-                                        </div>
-                                    </div>
-
-                                    <!-- Modal for editing folders -->
-                                    <div id="editModal" class="modal">
-                                        <div class="modal-content">
-                                            <span class="close">&times;</span>
-                                            <h2>Edit Folder</h2>
-                                            <form id="edit-folder-form">
-                                                <input type="hidden" id="edit-folder-id">
-                                                <label for="edit-folder-name">Folder name:</label>
-                                                <input type="text" id="edit-folder-name">
-                                                <button type="submit">Save</button>
-                                            </form>
-                                        </div>
-                                    </div>
-
-                                    <!-- Modal for deleting folders -->
-                                    <div id="deleteModal" class="modal">
-                                        <div class="modal-content">
-                                            <span class="close">&times;</span>
-                                            <h2>Delete Folder</h2>
-                                            <form id="delete-folder-form">
-                                                <input type="hidden" id="delete-folder-id">
-                                                <input type="hidden" name="_token" id="delete-csrf-token">
-                                                <p>Are you sure you want to delete this folder?</p>
-                                                <label for="force-delete">
-                                                    <input type="checkbox" id="force-delete" name="force"> Force delete
-                                                    (also delete all subfolders and files)
-                                                </label>
-                                                <br>
-                                                <button type="submit">Delete</button>
-                                                <button type="button" class="close">Cancel</button>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <!-- End of Main Content -->
+                    <!-- End of Main Content -->
 
                 <!-- Footer -->
                 <footer class="sticky-footer bg-white">
@@ -476,267 +312,46 @@
             <i class="fas fa-angle-up"></i>
         </a>
 
+    <!-- Modale pour l'aperçu des documents -->
+    <div class="modal fade" id="previewModal" tabindex="-1" role="dialog" aria-labelledby="previewModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="previewModalLabel">Aperçu du document</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <iframe id="previewIframe" style="width: 100%; height: 80vh;"></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
         <!-- Logout Modal-->
         <div class="modal fade" id="logoutModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
             aria-hidden="true">
             <div class="modal-dialog" role="document">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title" id="exampleModalLabel">Ready to Leave?</h5>
+                        <h5 class="modal-title" id="exampleModalLabel">Prêt à partir ?</h5>
                         <button class="close" type="button" data-dismiss="modal" aria-label="Close">
                             <span aria-hidden="true">×</span>
                         </button>
                     </div>
-                    <div class="modal-body">Select "Logout" below if you are ready to end your current session.</div>
+                    <div class="modal-body">Sélectionnez "Déconnexion" ci-dessous si vous êtes prêt à terminer votre session actuelle.</div>
                     <div class="modal-footer">
-                        <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
-                        <a class="btn btn-primary" href="login.html">Logout</a>
+                        <button class="btn btn-secondary" type="button" data-dismiss="modal">Annuler</button>
+                        <a class="btn btn-primary" href="{{ path('app_logout') }}">Déconnexion</a>
                     </div>
                 </div>
             </div>
         </div>
+    <script>
 
-        <!-- Bootstrap core JavaScript-->
-        <script src="{{ asset('assets/js/jquery.min.js') }}"></script>
-        <script src="{{ asset('assets/js/bootstrap.bundle.js') }}"></script>
-        <script src="{{ asset('assets/js/admin.min.js') }}" type="module"></script>
-        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        <script>
-            function ajaxRequest(url, method, data, onSuccess, onError) {
-                $.ajax({
-                    url: url,
-                    method: method,
-                    contentType: 'application/json',
-                    data: data,
-                    success: onSuccess,
-                    error: function (jqXHR, textStatus, errorThrown) {
-                        console.error(`Failed to ${method} data:`, textStatus, errorThrown, jqXHR.responseText);
-                        alert(`Failed to ${method} data.`);
-                        if (onError) onError(jqXHR, textStatus, errorThrown);
-                    }
-                });
-            }
-        
-            function createDropdownMenu(id, csrfToken) {
-                return `
-                    <div class="dropdown">
-                        <button class="btn btn-link dropdown-toggle" type="button" id="dropdownMenuButton-${id}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                            <i class="fas fa-ellipsis-v"></i>
-                        </button>
-                        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton-${id}">
-                            <a class="dropdown-item edit-folder" data-id="${id}" href="#">Edit</a>
-                            <form class="delete-folder-form" data-id="${id}" style="display:inline;">
-                                <input type="hidden" name="_token" value="${csrfToken}">
-                                <button type="submit" class="dropdown-item delete-folder" data-id="${id}">Delete</button>
-                            </form>
-                            <a class="dropdown-item move-folder" data-id="${id}" href="#">Move</a>
-                        </div>
-                    </div>`;
-            }
-        
-            function renderFolders(folders, container) {
-                folders.forEach(folder => {
-                    let folderItem = $(`
-                        <li class="nav-item">
-                            <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapse-${folder.id}" aria-expanded="false" aria-controls="collapse-${folder.id}">
-                                <i class="fas fa-fw fa-folder"></i>
-                                <span class="folder-arrow"><i class="fas fa-caret-right"></i></span>
-                                <span class="folder-link" data-id="${folder.id}">${folder.name}</span>
-                            </a>
-                            <div class="folder-options">
-                                ${createDropdownMenu(folder.id, folder.csrf_token)}
-                            </div>
-                            <div id="collapse-${folder.id}" class="collapse" aria-labelledby="heading-${folder.id}" data-parent="#folder-list">
-                                <div class="bg-white py-2 collapse-inner rounded">
-                                    <h6 class="collapse-header">${folder.name} Subfolders:</h6>
-                                    <ul id="subfolders-${folder.id}" class="folder-list"></ul>
-                                </div>
-                            </div>
-                        </li>
-                    `);
-                    container.append(folderItem);
-                    renderSubfolders(folder.subfolders, $(`#subfolders-${folder.id}`));
-                });
-            }
-        
-            function renderSubfolders(subfolders, container) {
-                subfolders.forEach(subfolder => {
-                    let subfolderItem = $(`
-                        <li class="nav-item subfolder-options">
-                            <i class="fas fa-fw fa-folder"></i>
-                            <span class="folder-link" data-id="${subfolder.id}">${subfolder.name}</span>
-                            ${createDropdownMenu(subfolder.id, subfolder.csrf_token)}
-                        </li>
-                    `);
-                    container.append(subfolderItem);
-                    renderSubfolders(subfolder.subfolders, container);
-                });
-            }
-        
-            function loadFolders() {
-                ajaxRequest('{{ path('get_folders') }}', 'GET', null, data => {
-                    let folderList = $('#folder-list');
-                    folderList.empty();
-                    renderFolders(data, folderList);
-                });
-            }
-        
-            $(document).ready(function () {
-                loadFolders();
-        
-                $('#create-folder').on('click', function () {
-                    $('#create-folder-modal').show();
-                });
-        
-                $('#create-folder-confirm').on('click', function () {
-                    let folderName = $('#new-folder-name').val();
-                    let parentFolderId = $('#parent-folder-select').val();
-                    ajaxRequest('{{ path('folder_new') }}', 'POST', JSON.stringify({ name: folderName, parent_id: parentFolderId || null }), () => {
-                        $('#create-folder-modal').hide();
-                        loadFolders();
-                    });
-                });
-        
-                $('#create-folder-cancel').on('click', function () {
-                    $('#create-folder-modal').hide();
-                });
-        
-                $('#folder-list').on('click', '.folder-link', function () {
-                    let folderId = $(this).data('id');
-                    window.location.href = '{{ path('folder_view', {'id': 'FOLDER_ID'}) }}'.replace('FOLDER_ID', folderId);
-                });
-        
-                $('#folder-list').on('click', '.edit-folder', function () {
-                    let folderId = $(this).data('id');
-                    $('#edit-folder-id').val(folderId);
-                    let folderName = $(this).closest('.nav-item').find('.folder-link').first().text();
-                    $('#edit-folder-name').val(folderName);
-                    $('#editModal').show();
-                });
-        
-                $('#edit-folder-form').on('submit', function (e) {
-                    e.preventDefault();
-                    let folderId = $('#edit-folder-id').val();
-                    let folderName = $('#edit-folder-name').val();
-                    ajaxRequest('{{ path('folder_edit', {'id': 'FOLDER_ID'}) }}'.replace('FOLDER_ID', folderId), 'POST', JSON.stringify({ name: folderName }), () => {
-                        loadFolders();
-                        $('#editModal').hide();
-                    });
-                });
-        
-                $('#folder-list').on('click', '.delete-folder', function () {
-                    let folderId = $(this).data('id');
-                    let csrfToken = $(this).siblings('.delete-folder-form').find('input[name="_token"]').val();
-                    $('#delete-folder-id').val(folderId);
-                    $('#delete-csrf-token').val(csrfToken);
-                    $('#deleteModal').show();
-                });
-        
-                $('#delete-folder-form').on('submit', function (e) {
-                    e.preventDefault();
-                    let folderId = $('#delete-folder-id').val();
-                    let csrfToken = $('#delete-csrf-token').val();
-                    let forceDelete = $('#force-delete').is(':checked');
-                    ajaxRequest('{{ path('folder_delete', {'id': 'FOLDER_ID'}) }}'.replace('FOLDER_ID', folderId), 'POST', { _token: csrfToken, force: forceDelete }, response => {
-                        if (response.success) {
-                            loadFolders();
-                        } else {
-                            alert(response.message || 'Failed to delete folder.');
-                        }
-                        $('#deleteModal').hide();
-                    });
-                });
-        
-                $('#folder-list').on('click', '.move-folder', function () {
-                    let folderId = $(this).data('id');
-                    $('#move-folder-id').val(folderId);
-                    ajaxRequest('{{ path('get_folders_for_move') }}', 'GET', null, data => {
-                        let folderOptions = data.map(folder => `<option value="${folder.id}">${folder.name}</option>`).join('');
-                        folderOptions = '<option value="">Root</option>' + folderOptions;
-                        $('#target-folder').html(folderOptions);
-                        $('#moveModal').show();
-                    });
-                });
-        
-                $('#move-folder-form').on('submit', function (e) {
-                    e.preventDefault();
-                    let folderId = $('#move-folder-id').val();
-                    let targetFolderId = $('#target-folder').val();
-                    ajaxRequest('{{ path('folder_move', {'id': 'FOLDER_ID'}) }}'.replace('FOLDER_ID', folderId), 'POST', JSON.stringify({ folder: targetFolderId || null }), response => {
-                        if (response.success) {
-                            loadFolders();
-                        } else {
-                            alert('Failed to move folder.');
-                        }
-                        $('#moveModal').hide();
-                    });
-                });
-        
-                $('#folder-list').on('click', '.nav-link', function (event) {
-                    event.preventDefault();
-                    let target = $(this).data('target');
-                    $(target).collapse('toggle');
-                    $(this).find('.folder-arrow i').toggleClass('fa-caret-right fa-caret-down');
-                });
-        
-                $(document).on('click', '.move-link', function (event) {
-                    event.preventDefault();
-                    var moveForm = $(this).parent().find('.move-form');
-                    moveForm.toggle();
-                });
-        
-                $(document).on('click', '.preview-link', function (event) {
-                    event.preventDefault();
-                    var documentId = $(this).data('id');
-                    var iframe = $('#previewIframe');
-                    iframe.attr('src', '{{ path('document_preview', {'id': 'DOCUMENT_ID_PLACEHOLDER'}) }}'.replace('DOCUMENT_ID_PLACEHOLDER', documentId));
-                    $('#previewModal').show();
-                });
-        
-                $('.close').on('click', function () {
-                    $(this).closest('.modal').hide();
-                });
-        
-                $(window).on('click', function (event) {
-                    if ($(event.target).hasClass('modal')) {
-                        $('.modal').hide();
-                    }
-                });
-        
-                $('#show-upload-form').on('click', function (event) {
-                    event.preventDefault();
-                    let uploadFormContainer = $('#upload-form-container');
-                    if (uploadFormContainer.is(':hidden')) {
-                        uploadFormContainer.show();
-                        $(this).text('Fermer');
-                    } else {
-                        uploadFormContainer.hide();
-                        $(this).html('<i class="fas fa-plus fa-sm text-white-50"></i> Add Document');
-                    }
-                });
-            });
-        </script>
-        
+    </script>
+    <script src="{{ asset('/js/bootstrap.bundle.js') }}"></script>
 </body>
 
 </html>
-
 {% endblock %}

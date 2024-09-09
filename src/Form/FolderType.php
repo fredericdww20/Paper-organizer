@@ -27,15 +27,13 @@ class FolderType extends AbstractType
             ->add('name', TextType::class)
             ->add('parent', EntityType::class, [
                 'class' => Folder::class,
-                'query_builder' => function ($repository) use ($user) {
-                    return $repository->createQueryBuilder('f')
-                        ->where('f.owner = :owner')
-                        ->setParameter('owner', $user);
-                },
                 'choice_label' => 'name',
-                'required' => false,
-                'placeholder' => 'Root Folder'
+                'attr' => ['class' => 'd-none'],
+                'disabled' => true,
+                'data' => $options['parent'], // Définir le parent par défaut
             ]);
+
+
     }
 
     public function configureOptions(OptionsResolver $resolver): void
@@ -43,6 +41,7 @@ class FolderType extends AbstractType
         $resolver->setDefaults([
             'data_class' => Folder::class,
             'user' => null,
+            'parent' => null,
         ]);
     }
 }

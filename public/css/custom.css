@@ -1,0 +1,13 @@
+.flash-success {
+    background-color: #1cc88a;
+    color: #ffffff;
+    display: inline-flex;
+    padding: 6px;
+    border-radius: 5px;
+    margin-bottom: 5px;
+}
+
+.flash-error {
+    background-color: #dc3545;
+    color: #ffffff;
+}
